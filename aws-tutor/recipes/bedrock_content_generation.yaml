@@ -1,0 +1,51 @@
+id: bedrock_content_generation
+title: "Generate Content with Bedrock"
+description: "Use Bedrock to generate articles, emails, or creative content"
+service: bedrock
+difficulty: beginner
+estimated_time: "5-10 minutes"
+cost_estimate: "$0.03-0.10 per article"
+
+steps:
+  - ui: "Select 'Claude 3.5 Sonnet' for high-quality content"
+    why: "Excellent at creative writing and content generation"
+    alternative: "Titan Text G1-Express for lower cost but less quality"
+
+  - ui: "Set temperature to 0.8"
+    why: "Higher creativity for engaging content generation"
+    parameter_explanation: "0.8 provides good balance of creativity and coherence"
+
+  - ui: "Set max tokens to 2000"
+    why: "Longer responses for article-length content"
+    cost_estimate: "~$0.03 per article (assuming 2000 output tokens)"
+
+  - ui: "Enter detailed prompt with context and requirements"
+    why: "Specific prompts generate better, more relevant content"
+    example: "Write a 500-word article about AWS Bedrock for beginners. Include key features, use cases, and cost considerations."
+
+  - ui: "Click 'Invoke' and review generated content"
+    why: "Always review AI-generated content before using"
+    best_practice: "Edit and fact-check before publishing"
+
+security_notes:
+  - "Review content for accuracy before publishing"
+  - "Consider copyright and plagiarism concerns"
+  - "Don't include sensitive information in prompts"
+  - "Use content filtering for inappropriate material"
+
+cost_notes:
+  - "Claude 3.5 Sonnet: $3/1M input + $15/1M output tokens"
+  - "Typical article: $0.03-0.10 per piece"
+  - "Shorter prompts reduce input costs"
+  - "Batch similar requests to optimize costs"
+
+cleanup:
+  - "Review generated content for quality"
+  - "Fact-check before publishing"
+  - "Remove any test content"
+  - "Monitor usage and costs"
+
+related_tasks:
+  - "bedrock_chatbot"
+  - "bedrock_data_analysis"
+  - "bedrock_code_assistance"

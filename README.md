@@ -1,241 +1,211 @@
-# AWS Console Navigator
+# AWS Tutor - AI-Powered AWS Console Assistant
 
-An intelligent Chrome extension that guides users through AWS Console workflows using visual navigation cues and natural language input.
+AWS Tutor is an intelligent Chrome extension that transforms the AWS Console into a guided learning experience. It provides AI-powered explanations, step-by-step guidance, and error diagnosis to help users master AWS services.
 
 ## 🚀 Features
 
-### Core Functionality
-- **Natural Language Input**: Describe your AWS goals in plain English
-- **Visual Navigation Cues**: Red pulsing borders and guidance panels highlight target elements
-- **Step-by-Step Guidance**: Break down complex AWS workflows into manageable steps
-- **Smart Page Detection**: Automatically detects page changes and advances workflow
-- **Clickable Navigation**: Direct links to AWS services with automatic page tracking
+### 🧠 Explain Mode
 
-### Supported Workflows
-- **EC2 Instance Launch**: Complete 12-step workflow for launching EC2 instances
-- **S3 Static Website Hosting**: Guide for hosting static websites
-- **RDS Database Setup**: Database creation and configuration
-- **Lambda API Creation**: Serverless API development
-- **General AWS Navigation**: Flexible guidance for any AWS service
+- **Hover Explanations**: Hover over any AWS Console element to get instant AI-powered explanations
+- **Context-Aware**: Understands what you're looking at and provides relevant information
+- **Learning Focus**: Designed to help you understand AWS concepts, not just complete tasks
 
-## 📁 Project Structure
+### 🎯 Do Mode
+
+- **Step-by-Step Guidance**: Get personalized plans for complex AWS tasks
+- **Visual Cues**: See exactly where to click and what to configure
+- **Best Practices**: Learn the right way to use AWS services
+
+### 🔧 Error Whisperer
+
+- **Smart Diagnosis**: Paste any AWS error and get instant diagnosis
+- **Solution Steps**: Clear, actionable steps to fix the problem
+- **Prevention Tips**: Learn how to avoid similar issues in the future
+
+## 📁 Current Project Structure
 
 ```
-extension/
-├── manifest.json          # Chrome extension configuration
-├── popup.html             # Extension popup interface
-├── popup.js               # Popup functionality
-├── popup.css              # Popup styling
-├── background.js          # Service worker and workflow management
-├── content.js             # DOM manipulation and visual cues
-├── content.css            # Visual cue styling
-├── icons/                 # Extension icons
-│   ├── icon16.png
-│   ├── icon32.png
-│   ├── icon48.png
-│   └── icon128.png
-├── test-ec2-workflow.html # Testing page for EC2 workflow
-└── styles/
-    └── popup.css          # Additional popup styles
+aws-tutor/
+├── extension/                 # Chrome Extension (MV3)
+│   ├── manifest.json         # Extension configuration
+│   ├── popup.html            # Main popup interface
+│   ├── popup.js              # Popup logic and mode switching
+│   ├── background.js         # Service worker for API communication
+│   ├── content.js            # Content script for AWS Console interaction
+│   ├── content.css           # Styles for in-page overlays
+│   ├── icons/                # Extension icons (16px, 32px, 48px, 128px)
+│   └── styles/
+│       └── popup.css         # Popup styling
+├── backend/                  # Node.js API Server
+│   ├── server.js             # Express server with AWS integration
+│   └── package.json          # Dependencies and scripts
+├── recipes/                  # YAML Knowledge Base
+│   └── bedrock_chatbot.yaml  # AI chatbot creation recipe
+├── docs/                     # Markdown Documentation
+│   └── bedrock_temperature.md # Temperature parameter explanation
+├── test-demo.sh              # Quick demo setup script
+├── test-api.sh               # API testing script
+└── README.md                 # This file
 ```
 
-## 🛠️ Installation
+## 🛠️ Quick Start
 
-### Prerequisites
-- Chrome browser (Manifest V3 compatible)
-- AWS Console access
+### 1. Start the Backend API
 
-### Setup
-1. Clone or download this repository
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the `extension/` folder
-5. The AWS Console Navigator extension should appear in your extensions list
+```bash
+# Make scripts executable
+chmod +x test-demo.sh test-api.sh
 
-## 🎯 Usage
+# Start the backend server (includes dependency installation)
+./test-demo.sh
+```
 
-### Starting a Workflow
-1. Navigate to the AWS Console (`console.aws.amazon.com`)
-2. Click the AWS Console Navigator extension icon
-3. Choose from quick start options or enter your goal in natural language:
-   - "I want to launch an EC2 instance"
-   - "Set up a database for my app"
-   - "Create a serverless API"
-   - "Host a static website"
+### 2. Load the Chrome Extension
 
-### Following Visual Guidance
-- **Red Pulsing Border**: Highlights the element you need to click
-- **Guidance Panel**: Shows step instructions and navigation controls
-- **Clickable Links**: Direct navigation to AWS services
-- **Auto-Advancement**: Automatically moves to next step when page changes
+1. Open Chrome and go to `chrome://extensions/`
+2. Enable "Developer mode" in the top right
+3. Click "Load unpacked" and select the `extension/` folder
+4. The AWS Tutor icon should appear in your extensions toolbar
 
-### Navigation Controls
-- **Previous**: Go back to the previous step
-- **Next**: Advance to the next step
-- **Stop**: End the current workflow
-- **×**: Close the guidance panel
+### 3. Test the Extension
 
-## 🔧 Technical Implementation
-
-### Architecture
-- **Manifest V3**: Modern Chrome extension architecture
-- **Service Worker**: Background script for workflow management
-- **Content Scripts**: DOM manipulation and visual cues
-- **Web Scraping Techniques**: Robust element detection using multiple strategies
-
-### Element Detection Strategies
-The extension uses 11 different strategies to find elements:
-
-1. **Direct CSS Selector**: Standard `document.querySelector()`
-2. **Data-testid Fallback**: `[data-testid="element"]`
-3. **Aria-label Search**: `[aria-label*="text"]`
-4. **Title Attribute**: `[title*="text"]`
-5. **Exact Text Match**: Find elements with exact text content
-6. **Partial Text Match**: Find elements containing text
-7. **AWS Console Specific**: Special handling for AWS UI elements
-8. **EC2 Service Detection**: Text-based EC2 service finding
-9. **Launch Instance Button**: Multiple approaches for AWS buttons
-10. **Error State Detection**: Identifies page loading issues
-11. **Comprehensive Search**: Scans all elements with multiple criteria
-
-### Visual Cue System
-- **Overlay**: Full-screen transparent overlay for visual cues
-- **Pulsing Animation**: CSS keyframes for attention-grabbing effects
-- **Z-index Management**: Ensures cues appear above all content
-- **Responsive Design**: Adapts to different screen sizes
+1. Navigate to [AWS Bedrock Console](https://console.aws.amazon.com/bedrock/)
+2. Click the AWS Tutor extension icon
+3. Choose a mode and start exploring!
 
 ## 🧪 Testing
 
-### Test Page
-Use `test-ec2-workflow.html` to test the extension without accessing AWS Console:
+### Test Backend API
 
-1. Open the test page in your browser
-2. Click "Start Workflow" to begin testing
-3. Test individual steps with the step buttons
-4. Simulate page navigation with "Simulate EC2 Navigation"
+```bash
+# Run API tests (requires backend to be running)
+./test-api.sh
+```
 
-### Debug Information
-The extension provides detailed console logging:
-- Element search strategies and results
-- Page structure analysis
-- Error state detection
-- Workflow progress tracking
+### Manual API Testing
 
-## 📋 Current Workflows
+```bash
+# Health check
+curl http://localhost:3001/health
 
-### EC2 Instance Launch (12 Steps)
-1. Navigate to EC2 Console
-2. Launch Instance
-3. Enter Instance Name
-4. Choose Operating System
-5. Select Free Tier AMI
-6. Choose Instance Type
-7. Create Key Pair
-8. Configure Network Settings
-9. Configure Storage
-10. Review and Launch
-11. Monitor Instance Status
-12. Check Instance State
+# Explain element
+curl -X POST http://localhost:3001/explain-element \
+  -H "Content-Type: application/json" \
+  -d '{"service":"bedrock","element":{"type":"temperature"},"url":"test"}'
 
-### S3 Static Website Hosting (4 Steps)
-1. Navigate to S3
-2. Create Bucket
-3. Configure Bucket
-4. Enable Static Hosting
+# Generate plan
+curl -X POST http://localhost:3001/plan \
+  -H "Content-Type: application/json" \
+  -d '{"service":"bedrock","goal":"Create an AI chatbot","url":"test"}'
 
-### RDS Database Setup (2 Steps)
-1. Navigate to RDS
-2. Create Database
+# Error help
+curl -X POST http://localhost:3001/error-help \
+  -H "Content-Type: application/json" \
+  -d '{"service":"bedrock","error":"AccessDenied: User is not authorized","url":"test"}'
+```
 
-### Lambda API Creation (2 Steps)
-1. Navigate to Lambda
-2. Create Function
+## 🎯 Demo Focus: Amazon Bedrock
 
-## 🔍 Troubleshooting
+This demo is specifically optimized for the **Amazon Bedrock Console**, making it perfect for showcasing AI explaining AI. The extension provides:
 
-### Common Issues
+- **Temperature Parameter**: Understand how creativity vs. consistency works
+- **Model Selection**: Learn about different foundation models
+- **Token Limits**: Understand cost control and response length
+- **Prompt Engineering**: Best practices for AI interactions
 
-**Extension not detecting elements:**
-- Ensure you're on the correct AWS Console page
-- Check browser console for debug information
-- Try refreshing the page
+## 🔧 Technical Architecture
 
-**Page loading errors:**
-- The extension detects "Unable to load content" errors
-- Refresh the page or check your network connection
-- Clear browser cache if issues persist
+### Frontend (Chrome Extension)
 
-**Visual cues not appearing:**
-- Check if the extension is enabled
-- Ensure you're on an AWS Console page
-- Look for console error messages
+- **Manifest V3**: Modern Chrome extension architecture
+- **Content Scripts**: Inject AI assistance into AWS Console pages
+- **Background Service Worker**: Handle API communication and state management
+- **Popup Interface**: Three-mode UI for user interaction
 
-### Debug Mode
-Enable detailed logging by opening browser DevTools and checking the Console tab for:
-- `🔍 Web scraping approach: Searching for element...`
-- `✅ Found element with strategy:`
-- `⚠️ AWS Console error detected`
+### Backend (Node.js API)
 
-## 🚧 Development Status
+- **Express Server**: RESTful API for AI features
+- **AWS SDK Integration**: Direct integration with Amazon Bedrock
+- **Knowledge Base**: YAML recipes and Markdown docs for grounding
+- **CORS Support**: Enable extension-to-backend communication
 
-### Completed Features
-- ✅ Basic extension structure (Manifest V3)
-- ✅ Visual cue system with pulsing animations
-- ✅ Natural language input processing
-- ✅ Step-by-step workflow guidance
-- ✅ Page change detection and auto-advancement
-- ✅ Clickable navigation links
-- ✅ Error state detection
-- ✅ Comprehensive element finding strategies
-- ✅ EC2 instance launch workflow (12 steps)
-- ✅ Test page for development
+### Knowledge Base
 
-### In Progress
-- 🔄 Additional AWS service workflows
-- 🔄 Enhanced error handling
-- 🔄 User preference settings
+- **YAML Recipes**: Structured, step-by-step guides for AWS tasks
+- **Markdown Docs**: Detailed explanations of AWS concepts
+- **Prompt Templates**: Reusable AI prompts for consistent responses
 
-### Planned Features
-- 📋 AI-powered workflow generation
-- 📋 Voice input support
-- 📋 Multi-service workflows
-- 📋 Workflow templates
-- 📋 Progress persistence
-- 📋 Customizable visual cues
+## 🚀 Development
+
+### Adding New Services
+
+1. Create new YAML recipe in `recipes/`
+2. Add service-specific docs in `docs/`
+3. Update content script element detection
+4. Test with the new service
+
+### Adding New Modes
+
+1. Update popup HTML and CSS
+2. Add mode logic to popup.js
+3. Implement mode handling in background.js
+4. Create content script features
+
+## 📝 Environment Variables
+
+Create a `.env` file in the `backend/` directory:
+
+```env
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_REGION=us-west-2
+PORT=3001
+NODE_ENV=development
+```
+
+## 🎉 Demo Script
+
+1. **Start Backend**: `./test-demo.sh`
+2. **Load Extension**: Load `extension/` folder in Chrome
+3. **Navigate to Bedrock**: Go to AWS Bedrock Console
+4. **Show Explain Mode**: Hover over temperature parameter
+5. **Show Do Mode**: Click "Create AI Chatbot" quick goal
+6. **Show Error Mode**: Click "Access Denied" quick goal
 
 ## 🤝 Contributing
 
-### Development Setup
-1. Fork the repository
-2. Make changes in the `extension/` directory
-3. Test using the provided test page
-4. Submit a pull request with detailed description
+This is a hackathon project! Feel free to:
 
-### Code Style
-- Use modern JavaScript (ES6+)
-- Follow Chrome extension best practices
-- Include comprehensive error handling
-- Add detailed console logging for debugging
+- Add new AWS service support
+- Improve the AI explanations
+- Enhance the visual guidance
+- Add more recipes and docs
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- AWS Console UI patterns and element structures
-- Chrome Extension development best practices
-- Web scraping techniques inspired by Beautiful Soup and Selenium
-- Community feedback and testing
-
-## 📞 Support
-
-For issues, questions, or contributions:
-- Check the troubleshooting section above
-- Review console logs for debug information
-- Test with the provided test page
-- Submit issues with detailed reproduction steps
+MIT License - see LICENSE file for details.
 
 ---
 
-**AWS Console Navigator** - Making AWS accessible through intelligent guidance 🚀
+**Built for DubHacks 2025** 🚀
+
+## 📋 Current Status
+
+✅ **Completed:**
+
+- Unified project structure with main components at root level
+- Chrome extension with three modes (Explain, Do, Error)
+- Backend API server with AWS integration
+- Knowledge base with recipes and docs
+- Testing scripts and setup automation
+
+🔄 **In Progress:**
+
+- Final cleanup of nested `aws-tutor/` folder
+- Complete file consolidation
+
+📝 **Next Steps:**
+
+- Remove the old nested `aws-tutor/` folder
+- Ensure all essential files are in the root-level folders
+- Test the complete unified project

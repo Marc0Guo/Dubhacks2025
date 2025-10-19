@@ -1,0 +1,140 @@
+# S3 Demo Recipe for AWS Tutor
+id: s3_demo_recipe
+title: "S3 Bucket Creation and Management"
+description: "Complete guide for creating and managing S3 buckets safely"
+service: s3
+difficulty: beginner
+estimated_time: "5-10 minutes"
+cost_estimate: "$0-1/month (free tier eligible)"
+
+# Element explanations for Explain Mode
+elements:
+  - selector: "#blockPublicAcls"
+    title: "Block all public access"
+    what: "Prevents your S3 bucket from being accidentally made public"
+    why:
+      - "Security: Prevents data breaches from public access"
+      - "Compliance: Required for many regulations (HIPAA, GDPR)"
+      - "Cost: Prevents unexpected charges from public data transfer"
+    pitfalls:
+      - "Don't disable unless you specifically need public access"
+      - "Even with this enabled, you can still use CloudFront for public content"
+    related_tasks: ["s3_cloudfront_public", "s3_private_website"]
+
+  - selector: "input[name='bucket-name']"
+    title: "Bucket name"
+    what: "Globally unique identifier for your S3 bucket"
+    why:
+      - "Must be unique across all AWS accounts worldwide"
+      - "Used in URLs and API calls"
+      - "Cannot be changed after creation"
+    pitfalls:
+      - "Use lowercase letters, numbers, and hyphens only"
+      - "Cannot start or end with hyphen"
+      - "Must be 3-63 characters long"
+    related_tasks: ["s3_naming_conventions"]
+
+  - selector: "#region-select"
+    title: "AWS Region"
+    what: "Geographic location where your bucket will be stored"
+    why:
+      - "Latency: Choose region closest to your users"
+      - "Compliance: Some data must stay in specific regions"
+      - "Cost: Different regions have different pricing"
+    pitfalls:
+      - "Cannot change region after bucket creation"
+      - "Cross-region data transfer costs money"
+    related_tasks: ["s3_region_selection"]
+
+# Step-by-step plans for Do Mode
+plans:
+  - id: s3_create_private_bucket
+    title: "Create Private S3 Bucket"
+    description: "Create a secure S3 bucket for private file storage"
+    steps:
+      - ui: "Click 'Create bucket' button"
+        why: "Start the bucket creation process"
+        cli: "aws s3 mb s3://my-private-bucket"
+        cloudformation: |
+          S3Bucket:
+            Type: AWS::S3::Bucket
+            Properties:
+              BucketName: my-private-bucket
+              PublicAccessBlockConfiguration:
+                BlockPublicAcls: true
+                BlockPublicPolicy: true
+                IgnorePublicAcls: true
+                RestrictPublicBuckets: true
+
+      - ui: "Enter bucket name (e.g., 'my-company-files-2024')"
+        why: "Must be globally unique and follow naming conventions"
+        validation: "3-63 characters, lowercase, no spaces"
+
+      - ui: "Select AWS region (e.g., us-east-1)"
+        why: "Choose region closest to your users for better performance"
+
+      - ui: "Check 'Block all public access'"
+        why: "Prevents accidental public access and security breaches"
+
+      - ui: "Click 'Create bucket'"
+        why: "Finalize bucket creation with your settings"
+
+    security_notes:
+      - "Bucket is private by default"
+      - "Use IAM policies for access control"
+      - "Enable versioning for data protection"
+      - "Set up lifecycle policies for cost optimization"
+
+    cost_notes:
+      - "First 5GB storage free for 12 months"
+      - "First 20,000 GET requests free per month"
+      - "First 2,000 PUT requests free per month"
+
+    cleanup:
+      - "Empty bucket: aws s3 rm s3://my-bucket --recursive"
+      - "Delete bucket: aws s3 rb s3://my-bucket"
+      - "Remove IAM policies if created"
+
+  - id: s3_upload_files
+    title: "Upload Files to S3"
+    description: "Upload files to your S3 bucket"
+    steps:
+      - ui: "Click on your bucket name"
+        why: "Enter the bucket to manage its contents"
+
+      - ui: "Click 'Upload' button"
+        why: "Start the file upload process"
+
+      - ui: "Drag and drop files or click 'Add files'"
+        why: "Select files to upload to the bucket"
+
+      - ui: "Click 'Upload' to confirm"
+        why: "Complete the upload process"
+
+    cli_alternative: "aws s3 cp ./local-folder s3://my-bucket/ --recursive"
+
+# Error patterns for Error Whisperer
+error_patterns:
+  - error: "BucketAlreadyExists"
+    cause: "Bucket name is already taken globally"
+    solution: "Choose a different, more unique bucket name"
+    prevention: "Use company name, date, or random suffix"
+
+  - error: "InvalidBucketName"
+    cause: "Bucket name doesn't follow naming conventions"
+    solution: "Use only lowercase letters, numbers, and hyphens"
+    prevention: "Check naming rules before creating"
+
+  - error: "AccessDenied"
+    cause: "Insufficient permissions to create bucket"
+    solution: "Contact your AWS administrator for S3 permissions"
+    prevention: "Ensure you have s3:CreateBucket permission"
+
+# Related documentation
+citations:
+  - title: "S3 Bucket Naming Rules"
+    url: "https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html"
+  - title: "S3 Security Best Practices"
+    url: "https://docs.aws.amazon.com/AmazonS3/latest/userguide/security-best-practices.html"
+  - title: "S3 Pricing"
+    url: "https://aws.amazon.com/s3/pricing/"

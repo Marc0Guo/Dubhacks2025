@@ -1,0 +1,199 @@
+# Bedrock Console Demo Recipe for AWS Tutor
+id: bedrock_demo_recipe
+title: "Amazon Bedrock Console Guide"
+description: "Complete guide for using Amazon Bedrock AI models"
+service: bedrock
+difficulty: intermediate
+estimated_time: "10-15 minutes"
+cost_estimate: "$0.50-5.00 per demo"
+
+# Element explanations for Explain Mode
+elements:
+  - selector: "[data-testid='model-selector']"
+    title: "Foundation Model Selection"
+    what: "Choose which AI model to use for your application"
+    why:
+      - "Different models excel at different tasks (text, images, code)"
+      - "Cost varies significantly between models"
+      - "Performance and capabilities differ by model"
+    pitfalls:
+      - "Claude 3.5 Sonnet is best for general tasks but more expensive"
+      - "Titan models are cheaper but less capable"
+      - "Some models require approval for access"
+    related_tasks: ["bedrock_model_comparison", "bedrock_cost_optimization"]
+
+  - selector: "input[name='temperature']"
+    title: "Temperature Parameter"
+    what: "Controls randomness and creativity in AI responses"
+    why:
+      - "Lower values (0.1-0.3): More focused, deterministic responses"
+      - "Higher values (0.7-1.0): More creative, varied responses"
+      - "Affects both quality and cost of responses"
+    pitfalls:
+      - "Too low: Responses become repetitive and boring"
+      - "Too high: Responses become incoherent or off-topic"
+      - "Default 0.5 is usually good for most use cases"
+    related_tasks: ["bedrock_parameter_tuning", "bedrock_response_quality"]
+
+  - selector: "input[name='max_tokens']"
+    title: "Max Tokens"
+    what: "Maximum length of the AI response in tokens"
+    why:
+      - "Prevents runaway costs from very long responses"
+      - "Ensures responses fit your application's needs"
+      - "Each token costs money, so shorter limits save money"
+    pitfalls:
+      - "Too low: Responses get cut off mid-sentence"
+      - "Too high: Wastes money on unused token capacity"
+      - "1 token ≈ 0.75 words in English"
+    related_tasks: ["bedrock_cost_management", "bedrock_response_length"]
+
+  - selector: "[data-testid='prompt-input']"
+    title: "Prompt Input"
+    what: "The instruction or question you give to the AI model"
+    why:
+      - "Clear prompts get better responses"
+      - "Specific instructions reduce hallucinations"
+      - "Good prompts save money by reducing retries"
+    pitfalls:
+      - "Vague prompts lead to vague responses"
+      - "Too long prompts waste tokens and money"
+      - "Missing context leads to irrelevant responses"
+    related_tasks: ["bedrock_prompt_engineering", "bedrock_best_practices"]
+
+  - selector: "[data-testid='invoke-button']"
+    title: "Invoke Model"
+    what: "Sends your prompt to the selected AI model"
+    why:
+      - "Executes the AI inference with your parameters"
+      - "Costs are calculated based on input/output tokens"
+      - "Response time varies by model and complexity"
+    pitfalls:
+      - "Each invocation costs money immediately"
+      - "No undo - you're charged even for bad responses"
+      - "Rate limits may apply for some models"
+    related_tasks: ["bedrock_cost_tracking", "bedrock_rate_limits"]
+
+# Step-by-step plans for Do Mode
+plans:
+  - id: bedrock_create_chatbot
+    title: "Create AI Chatbot with Bedrock"
+    description: "Build a simple chatbot using Claude 3.5 Sonnet"
+    steps:
+      - ui: "Select 'Claude 3.5 Sonnet' from model dropdown"
+        why: "Best general-purpose model for conversational AI"
+        cli: "aws bedrock list-foundation-models --by-provider anthropic"
+        cost_note: "$3.00 per 1M input tokens, $15.00 per 1M output tokens"
+
+      - ui: "Set temperature to 0.7"
+        why: "Balances creativity with consistency for chatbot responses"
+        parameter_explanation: "0.7 provides good conversational flow without being too random"
+
+      - ui: "Set max tokens to 1000"
+        why: "Reasonable response length for chatbot interactions"
+        cost_estimate: "~$0.015 per response (assuming 1000 output tokens)"
+
+      - ui: "Enter system prompt: 'You are a helpful AI assistant...'"
+        why: "Sets the personality and behavior of your chatbot"
+        example: "You are a helpful AI assistant. Be friendly, concise, and helpful."
+
+      - ui: "Type user message and click 'Invoke'"
+        why: "Sends the message to Claude and gets a response"
+        testing: "Try: 'Hello, how can you help me today?'"
+
+    security_notes:
+      - "Never include sensitive data in prompts"
+      - "Use IAM policies to control access"
+      - "Monitor usage to prevent abuse"
+      - "Consider content filtering for production"
+
+    cost_notes:
+      - "Claude 3.5 Sonnet: $3/1M input + $15/1M output tokens"
+      - "Typical conversation: $0.01-0.05 per exchange"
+      - "Set up billing alerts to monitor costs"
+      - "Use shorter prompts to reduce costs"
+
+    cleanup:
+      - "Review and delete test conversations"
+      - "Remove unnecessary IAM permissions"
+      - "Set up cost monitoring alerts"
+
+  - id: bedrock_text_generation
+    title: "Generate Text Content with Bedrock"
+    description: "Use Bedrock to generate articles, emails, or creative content"
+    steps:
+      - ui: "Select 'Claude 3.5 Sonnet' for text generation"
+        why: "Excellent at creative writing and content generation"
+        alternative: "Titan Text G1-Express for lower cost but less quality"
+
+      - ui: "Set temperature to 0.8"
+        why: "Higher creativity for content generation"
+        parameter_explanation: "0.8 provides good balance of creativity and coherence"
+
+      - ui: "Set max tokens to 2000"
+        why: "Longer responses for article-length content"
+        cost_estimate: "~$0.03 per article (assuming 2000 output tokens)"
+
+      - ui: "Enter detailed prompt with context and requirements"
+        why: "Specific prompts generate better, more relevant content"
+        example: "Write a 500-word article about AWS Bedrock for beginners. Include key features, use cases, and cost considerations."
+
+      - ui: "Click 'Invoke' and review the generated content"
+        why: "Always review AI-generated content before using"
+        best_practice: "Edit and fact-check before publishing"
+
+# Error patterns for Error Whisperer
+error_patterns:
+  - error: "AccessDenied: User is not authorized to perform bedrock:InvokeModel"
+    cause: "Missing IAM permissions for Bedrock"
+    solution: "Add bedrock:InvokeModel permission to your IAM policy"
+    prevention: "Use AWS managed policy: AmazonBedrockFullAccess (for testing)"
+
+  - error: "ValidationException: Model not accessible"
+    cause: "Model requires approval or is not available in your region"
+    solution: "Request model access in Bedrock console or try a different model"
+    prevention: "Check model availability before building applications"
+
+  - error: "ThrottlingException: Rate exceeded"
+    cause: "Too many requests sent too quickly"
+    solution: "Implement exponential backoff and retry logic"
+    prevention: "Add delays between requests in your application"
+
+  - error: "ValidationException: Input too long"
+    cause: "Prompt exceeds model's maximum input length"
+    solution: "Shorten your prompt or split into multiple requests"
+    prevention: "Check model's token limits before sending requests"
+
+# Model comparison data
+model_comparison:
+  - name: "Claude 3.5 Sonnet"
+    provider: "Anthropic"
+    best_for: "General purpose, coding, analysis"
+    cost: "$3/1M input, $15/1M output"
+    max_tokens: 4096
+    strengths: ["Reasoning", "Code generation", "Analysis"]
+
+  - name: "Claude 3 Haiku"
+    provider: "Anthropic"
+    best_for: "Fast, simple tasks"
+    cost: "$0.25/1M input, $1.25/1M output"
+    max_tokens: 4096
+    strengths: ["Speed", "Cost efficiency", "Simple Q&A"]
+
+  - name: "Titan Text G1-Express"
+    provider: "Amazon"
+    best_for: "Basic text generation"
+    cost: "$0.8/1M input, $3.2/1M output"
+    max_tokens: 4096
+    strengths: ["Cost", "Availability", "Basic tasks"]
+
+# Related documentation
+citations:
+  - title: "Amazon Bedrock User Guide"
+    url: "https://docs.aws.amazon.com/bedrock/latest/userguide/"
+  - title: "Bedrock Pricing"
+    url: "https://aws.amazon.com/bedrock/pricing/"
+  - title: "Claude 3.5 Sonnet Documentation"
+    url: "https://docs.anthropic.com/claude/docs"
+  - title: "Prompt Engineering Best Practices"
+    url: "https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-engineering.html"
