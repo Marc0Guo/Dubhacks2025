@@ -11,43 +11,61 @@ let workflowState = {
   steps: []
 };
 
+// Store for explain mode state
+let explainModeState = {
+  isActive: false,
+  currentTab: null
+};
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Background received message:', request);
-  
+
   switch (request.action) {
     case 'startGuidance':
       handleStartGuidance(request.goal, sendResponse);
       return true; // Keep message channel open for async response
-      
+
     case 'getWorkflowState':
       sendResponse(workflowState);
       break;
-      
+
     case 'nextStep':
       handleNextStep(sendResponse);
       return true;
-      
+
     case 'previousStep':
       handlePreviousStep(sendResponse);
       return true;
-      
+
     case 'stopGuidance':
       handleStopGuidance(sendResponse);
       break;
-      
+
     case 'pageChanged':
       handlePageChange(request.url, sendResponse);
       break;
-      
+
     case 'navigateToUrl':
       handleNavigation(request.url, sendResponse);
       return true;
-      
+
     case 'openPopup':
       handleOpenPopup(sendResponse);
       break;
-      
+
+    case 'startExplainMode':
+      handleStartExplainMode(sendResponse);
+      return true;
+
+    case 'stopExplainMode':
+      handleStopExplainMode(sendResponse);
+      break;
+
+    case 'explainElement':
+      handleExplainElement(request.elementData, sendResponse);
+      return true;
+
     default:
       sendResponse({ success: false, error: 'Unknown action' });
   }
@@ -56,11 +74,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Handle starting guidance
 function handleStartGuidance(goal, sendResponse) {
   console.log('Starting guidance for goal:', goal);
-  
+
   try {
     // Generate workflow steps based on goal
     const workflow = generateWorkflow(goal);
-    
+
     if (workflow && workflow.steps.length > 0) {
       workflowState = {
         isActive: true,
@@ -69,9 +87,9 @@ function handleStartGuidance(goal, sendResponse) {
         goal: goal,
         steps: workflow.steps
       };
-      
+
       currentWorkflow = workflow;
-      
+
       // Send message to content script to start visual guidance
       chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
         if (tabs[0]) {
@@ -82,7 +100,7 @@ function handleStartGuidance(goal, sendResponse) {
           });
         }
       });
-      
+
       sendResponse({ success: true, workflow: workflow });
     } else {
       sendResponse({ success: false, error: 'Could not generate workflow for this goal' });
@@ -96,7 +114,7 @@ function handleStartGuidance(goal, sendResponse) {
 // Generate workflow based on goal (basic keyword matching for MVP)
 function generateWorkflow(goal) {
   const goalLower = goal.toLowerCase();
-  
+
   // Static workflows for MVP
   if (goalLower.includes('static') && goalLower.includes('website')) {
     return {
@@ -138,7 +156,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   if (goalLower.includes('web') && goalLower.includes('app')) {
     return {
       name: 'Deploy Web Application',
@@ -171,7 +189,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   // Detailed EC2 Instance Launch Workflow
   if (goalLower.includes('launch') && goalLower.includes('instance')) {
     return {
@@ -279,7 +297,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   if (goalLower.includes('database')) {
     return {
       name: 'Setup Database',
@@ -304,7 +322,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   if (goalLower.includes('api') || goalLower.includes('serverless')) {
     return {
       name: 'Create Serverless API',
@@ -329,7 +347,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   // Default workflow for unrecognized goals
   return {
     name: 'General AWS Guidance',
@@ -355,25 +373,25 @@ function handleNextStep(sendResponse) {
     totalSteps: workflowState.totalSteps,
     stepsLength: workflowState.steps ? workflowState.steps.length : 'undefined'
   });
-  
+
   // Check if workflow state is properly initialized
   if (!workflowState || !workflowState.steps || workflowState.steps.length === 0) {
     console.error('Workflow state not properly initialized');
     sendResponse({ success: false, error: 'Workflow not initialized' });
     return;
   }
-  
+
   if (workflowState.isActive && workflowState.currentStep < workflowState.totalSteps - 1) {
     workflowState.currentStep++;
     console.log('Advancing to step:', workflowState.currentStep + 1, 'of', workflowState.totalSteps);
-    
+
     // Validate step exists
     if (!workflowState.steps[workflowState.currentStep]) {
       console.error('Step not found at index:', workflowState.currentStep);
       sendResponse({ success: false, error: 'Step not found' });
       return;
     }
-    
+
     // Send updated step to content script
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       if (tabs[0]) {
@@ -394,9 +412,9 @@ function handleNextStep(sendResponse) {
         console.error('No active tab found');
       }
     });
-    
-    sendResponse({ 
-      success: true, 
+
+    sendResponse({
+      success: true,
       step: workflowState.steps[workflowState.currentStep],
       stepNumber: workflowState.currentStep + 1,
       totalSteps: workflowState.totalSteps
@@ -405,7 +423,7 @@ function handleNextStep(sendResponse) {
     // Workflow completed
     console.log('Workflow completed!');
     workflowState.isActive = false;
-    
+
     // Send completion message to content script
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       if (tabs[0]) {
@@ -415,7 +433,7 @@ function handleNextStep(sendResponse) {
         });
       }
     });
-    
+
     sendResponse({ success: true, completed: true, message: 'Workflow completed successfully!' });
   } else {
     console.error('Cannot advance step - workflow not active or invalid state');
@@ -427,7 +445,7 @@ function handleNextStep(sendResponse) {
 function handlePreviousStep(sendResponse) {
   if (workflowState.isActive && workflowState.currentStep > 0) {
     workflowState.currentStep--;
-    
+
     // Send updated step to content script
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       if (tabs[0]) {
@@ -439,7 +457,7 @@ function handlePreviousStep(sendResponse) {
         });
       }
     });
-    
+
     sendResponse({ success: true, step: workflowState.steps[workflowState.currentStep] });
   } else {
     sendResponse({ success: false, error: 'Already at first step' });
@@ -450,7 +468,7 @@ function handlePreviousStep(sendResponse) {
 function handleStopGuidance(sendResponse) {
   workflowState.isActive = false;
   currentWorkflow = null;
-  
+
   // Send message to content script to stop visual guidance
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     if (tabs[0]) {
@@ -459,7 +477,7 @@ function handleStopGuidance(sendResponse) {
       });
     }
   });
-  
+
   sendResponse({ success: true });
 }
 
@@ -480,18 +498,18 @@ function loadWorkflowState() {
 // Handle page change detection
 function handlePageChange(url, sendResponse) {
   console.log('Page changed to:', url);
-  
+
   if (workflowState.isActive && currentWorkflow) {
     const currentStepData = workflowState.steps[workflowState.currentStep];
-    
+
     // Check if the page change matches the expected target page for current step
     if (currentStepData && currentStepData.targetPage && url.includes(currentStepData.targetPage)) {
       console.log('Page change matches expected target, advancing to next step');
-      
+
       // Auto-advance to next step
       if (workflowState.currentStep < workflowState.totalSteps - 1) {
         workflowState.currentStep++;
-        
+
         // Send updated step to content script
         chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
           if (tabs[0]) {
@@ -503,7 +521,7 @@ function handlePageChange(url, sendResponse) {
             });
           }
         });
-        
+
         sendResponse({ success: true, advanced: true, step: workflowState.steps[workflowState.currentStep] });
       } else {
         sendResponse({ success: true, advanced: false, message: 'Workflow completed' });
@@ -519,7 +537,7 @@ function handlePageChange(url, sendResponse) {
 // Handle navigation to specific URL
 function handleNavigation(url, sendResponse) {
   console.log('Navigating to:', url);
-  
+
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     if (tabs[0]) {
       chrome.tabs.update(tabs[0].id, { url: url }, (updatedTab) => {
@@ -550,3 +568,229 @@ function handleOpenPopup(sendResponse) {
 
 // Initialize
 loadWorkflowState();
+
+// Explain Mode Functions
+function handleStartExplainMode(sendResponse) {
+  console.log('Starting explain mode');
+
+  try {
+    // Get current active tab
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      if (tabs[0]) {
+        explainModeState.isActive = true;
+        explainModeState.currentTab = tabs[0].id;
+
+        // Send message to content script to activate explain mode
+        chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'startExplainMode'
+        });
+
+        sendResponse({ success: true });
+      } else {
+        sendResponse({ success: false, error: 'No active tab found' });
+      }
+    });
+  } catch (error) {
+    console.error('Error starting explain mode:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+function handleStopExplainMode(sendResponse) {
+  console.log('Stopping explain mode');
+
+  try {
+    explainModeState.isActive = false;
+
+    if (explainModeState.currentTab) {
+      // Send message to content script to deactivate explain mode
+      chrome.tabs.sendMessage(explainModeState.currentTab, {
+        action: 'stopExplainMode'
+      });
+
+      explainModeState.currentTab = null;
+    }
+
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error('Error stopping explain mode:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+async function handleExplainElement(elementData, sendResponse) {
+  console.log('Handling element explanation:', elementData);
+
+  try {
+    // First try to use the existing API
+    const explanation = await getElementExplanationFromAPI(elementData);
+
+    if (explanation) {
+      sendResponse({ success: true, explanation: explanation });
+      return;
+    }
+
+    // Fallback to Bedrock integration
+    const bedrockExplanation = await getElementExplanationFromBedrock(elementData);
+
+    if (bedrockExplanation) {
+      sendResponse({ success: true, explanation: bedrockExplanation });
+    } else {
+      // Generate mock explanation as final fallback
+      const mockExplanation = generateMockExplanation(elementData);
+      sendResponse({ success: true, explanation: mockExplanation });
+    }
+
+  } catch (error) {
+    console.error('Error explaining element:', error);
+
+    // Generate mock explanation on error
+    const mockExplanation = generateMockExplanation(elementData);
+    sendResponse({ success: true, explanation: mockExplanation });
+  }
+}
+
+async function getElementExplanationFromAPI(elementData) {
+  try {
+    // Use the correct Bedrock Agent API format
+    const response = await fetch('http://localhost:5000/explain-element', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        element: {
+          tagName: elementData.tagName,
+          id: elementData.id,
+          className: elementData.className,
+          textContent: elementData.textContent,
+          attributes: elementData.attributes,
+          parentContext: elementData.parentContext,
+          siblingContext: elementData.siblingContext,
+          url: elementData.url
+        }
+      }),
+      timeout: 10000
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.explanation) {
+        // Parse the explanation from Bedrock Agent
+        const explanation = data.explanation;
+
+        // Convert the Chinese explanation to structured format
+        return {
+          what: explanation,
+          why: '这个元素是AWS控制台界面的重要组成部分，帮助您管理和配置云服务。',
+          how: '点击或与此元素交互来执行相应的操作。',
+          pitfalls: '请注意，某些操作可能会产生费用或不可逆的更改，请仔细确认后再执行。'
+        };
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.warn('API explanation failed:', error);
+    return null;
+  }
+}
+
+async function getElementExplanationFromBedrock(elementData) {
+  try {
+    // Use the Bedrock Agent API for enhanced AI explanations
+    const response = await fetch('http://localhost:5000/agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `请详细解释这个AWS控制台元素：${JSON.stringify({
+          tagName: elementData.tagName,
+          id: elementData.id,
+          className: elementData.className,
+          textContent: elementData.textContent,
+          attributes: elementData.attributes,
+          url: elementData.url
+        })}`
+      }),
+      timeout: 15000
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.reply) {
+        // Parse the AI explanation from Bedrock Agent
+        const explanation = data.reply;
+
+        return {
+          what: explanation,
+          why: '这个元素是AWS控制台界面的重要组成部分，帮助您管理和配置云服务。',
+          how: '点击或与此元素交互来执行相应的操作。',
+          pitfalls: '请注意，某些操作可能会产生费用或不可逆的更改，请仔细确认后再执行。'
+        };
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.warn('Bedrock explanation failed:', error);
+    return null;
+  }
+}
+
+function generateMockExplanation(elementData) {
+  const elementType = elementData.tagName;
+  const textContent = elementData.textContent;
+  const url = elementData.url;
+
+  // Generate contextual explanations based on element type and content
+  let explanation = {
+    what: '',
+    why: '',
+    how: '',
+    pitfalls: ''
+  };
+
+  // Analyze element type and content
+  if (elementType === 'button') {
+    explanation.what = `This is a button labeled "${textContent}" on the AWS Console.`;
+    explanation.why = 'Buttons allow you to perform actions like creating resources, saving changes, or navigating to different pages.';
+    explanation.how = 'Click this button to execute the action it represents.';
+    explanation.pitfalls = 'Be careful with buttons that delete or modify resources, as these actions may be irreversible.';
+  } else if (elementType === 'input' || elementType === 'textarea') {
+    explanation.what = `This is an input field for entering "${textContent || 'data'}" on the AWS Console.`;
+    explanation.why = 'Input fields allow you to configure settings, enter names, or provide parameters for AWS resources.';
+    explanation.how = 'Click in this field and type your desired value or configuration.';
+    explanation.pitfalls = 'Make sure to enter valid values according to AWS naming conventions and requirements.';
+  } else if (elementType === 'a' || textContent.includes('Launch') || textContent.includes('Create')) {
+    explanation.what = `This is a link or action button for "${textContent}" on the AWS Console.`;
+    explanation.why = 'This element helps you navigate to specific AWS services or start creating new resources.';
+    explanation.how = 'Click this element to navigate or start the creation process.';
+    explanation.pitfalls = 'Creating resources may incur costs, so make sure you understand the pricing before proceeding.';
+  } else if (elementType === 'select') {
+    explanation.what = `This is a dropdown menu for selecting options on the AWS Console.`;
+    explanation.why = 'Dropdown menus let you choose from predefined options for configuring AWS resources.';
+    explanation.how = 'Click the dropdown to see available options and select the one you need.';
+    explanation.pitfalls = 'Choose options carefully as they may affect the functionality and cost of your resources.';
+  } else {
+    // Generic explanation
+    explanation.what = `This is a ${elementType} element containing "${textContent}" on the AWS Console.`;
+    explanation.why = 'This element is part of the AWS Console interface for managing your cloud resources.';
+    explanation.how = 'Interact with this element to perform actions or view information.';
+    explanation.pitfalls = 'Always review your actions before confirming changes to avoid unintended consequences.';
+  }
+
+  // Add context-specific information based on URL
+  if (url.includes('ec2')) {
+    explanation.what += ' This element is part of the Amazon EC2 service console.';
+    explanation.why += ' EC2 provides scalable virtual machines in the cloud.';
+  } else if (url.includes('s3')) {
+    explanation.what += ' This element is part of the Amazon S3 service console.';
+    explanation.why += ' S3 provides object storage for files and data.';
+  } else if (url.includes('lambda')) {
+    explanation.what += ' This element is part of the AWS Lambda service console.';
+    explanation.why += ' Lambda allows you to run code without managing servers.';
+  } else if (url.includes('rds')) {
+    explanation.what += ' This element is part of the Amazon RDS service console.';
+    explanation.why += ' RDS provides managed relational databases.';
+  }
+
+  return explanation;
+}

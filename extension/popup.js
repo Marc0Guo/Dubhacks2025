@@ -8,17 +8,16 @@ document.addEventListener('DOMContentLoaded', function() {
   const helpButton = document.getElementById('help-btn');
   const modeButtons = document.querySelectorAll('.mode-btn');
   const modeContents = document.querySelectorAll('.mode-content');
-  
+
   // Explain mode elements
-  const explainInput = document.getElementById('explain-input');
-  const startExplainButton = document.getElementById('start-explain');
+  const startExplainModeButton = document.getElementById('start-explain-mode');
   const explainStatusSection = document.getElementById('explain-status-section');
-  
+
   // Error mode elements
   const errorInput = document.getElementById('error-input');
   const startErrorButton = document.getElementById('start-error');
   const errorStatusSection = document.getElementById('error-status-section');
-  
+
   // API integration
   let apiAvailable = false;
 
@@ -28,10 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
     startButton.disabled = !hasText;
   });
 
-  // Enable/disable explain button based on input
-  explainInput.addEventListener('input', function() {
-    const hasText = this.value.trim().length > 0;
-    startExplainButton.disabled = !hasText;
+  // Handle explain mode button click
+  startExplainModeButton.addEventListener('click', function() {
+    startExplainMode();
   });
 
   // Enable/disable error button based on input
@@ -48,13 +46,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Handle explain button click
-  startExplainButton.addEventListener('click', function() {
-    const question = explainInput.value.trim();
-    if (question) {
-      startExplanation(question);
-    }
-  });
 
   // Handle error button click
   startErrorButton.addEventListener('click', function() {
@@ -100,11 +91,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Remove active class from all buttons and content
     modeButtons.forEach(btn => btn.classList.remove('active'));
     modeContents.forEach(content => content.classList.remove('active'));
-    
+
     // Add active class to selected button and content
     const activeButton = document.querySelector(`[data-mode="${mode}"]`);
     const activeContent = document.getElementById(`${mode}-mode`);
-    
+
     if (activeButton && activeContent) {
       activeButton.classList.add('active');
       activeContent.classList.add('active');
@@ -114,11 +105,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // Function to start guidance process
   function startGuidance(goal) {
     console.log('Starting guidance for:', goal);
-    
+
     // Show status
     statusSection.style.display = 'block';
     statusSection.querySelector('.status-text').textContent = 'Analyzing your goal...';
-    
+
     // Send message to background script
     chrome.runtime.sendMessage({
       action: 'startGuidance',
@@ -126,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, function(response) {
       if (response && response.success) {
         statusSection.querySelector('.status-text').textContent = 'Guidance started! Check the AWS Console.';
-        
+
         // Close popup after a short delay
         setTimeout(() => {
           window.close();
@@ -137,90 +128,56 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Function to start explanation process
-  async function startExplanation(question) {
-    console.log('Starting explanation for:', question);
-    
+  // Function to start explain mode
+  function startExplainMode() {
+    console.log('Starting explain mode');
+
     // Show status
     explainStatusSection.style.display = 'block';
-    explainStatusSection.querySelector('.status-text').textContent = 'Analyzing your question...';
-    
-    try {
-      // Check API availability first
-      if (!apiAvailable) {
-        await checkApiHealth();
-      }
-      
-      if (apiAvailable) {
-        // Use new API for explanation
-        const response = await fetch('https://api.thishurtyougave.select/explain-element', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            service: 'bedrock', 
-            element: { 
-              type: 'general', 
-              label: question 
-            }
-          })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          explainStatusSection.querySelector('.status-text').textContent = `Explanation ready! ${data.title}: ${data.what}`;
-        } else {
-          throw new Error('API request failed');
-        }
+    explainStatusSection.querySelector('.status-text').textContent = 'Explain mode activated! Click any element in the AWS Console.';
+
+    // Send message to background script to activate explain mode
+    chrome.runtime.sendMessage({
+      action: 'startExplainMode'
+    }, function(response) {
+      if (response && response.success) {
+        explainStatusSection.querySelector('.status-text').textContent = 'Explain mode is active! Click any element to get explanations.';
+
+        // Close popup after a short delay
+        setTimeout(() => {
+          window.close();
+        }, 1500);
       } else {
-        // Fallback to original method
-        chrome.runtime.sendMessage({
-          action: 'startExplanation',
-          question: question
-        }, function(response) {
-          if (response && response.success) {
-            explainStatusSection.querySelector('.status-text').textContent = 'Explanation started! Check the AWS Console.';
-          } else {
-            explainStatusSection.querySelector('.status-text').textContent = 'Error starting explanation. Please try again.';
-          }
-        });
+        explainStatusSection.querySelector('.status-text').textContent = 'Error activating explain mode. Please try again.';
       }
-      
-      // Close popup after a short delay
-      setTimeout(() => {
-        window.close();
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Explanation error:', error);
-      explainStatusSection.querySelector('.status-text').textContent = 'Error: Could not connect to explanation service.';
-    }
+    });
   }
 
   // Function to start error diagnosis process
   async function startErrorDiagnosis(error) {
     console.log('Starting error diagnosis for:', error);
-    
+
     // Show status
     errorStatusSection.style.display = 'block';
     errorStatusSection.querySelector('.status-text').textContent = 'Analyzing your error...';
-    
+
     try {
       // Check API availability first
       if (!apiAvailable) {
         await checkApiHealth();
       }
-      
+
       if (apiAvailable) {
         // Use new API for error diagnosis
         const response = await fetch('https://api.thishurtyougave.select/error-help', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            service: 'bedrock', 
-            error: error 
+          body: JSON.stringify({
+            service: 'bedrock',
+            error: error
           })
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           errorStatusSection.querySelector('.status-text').textContent = `Diagnosis complete! ${data.title}: ${data.solution}`;
@@ -240,12 +197,12 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         });
       }
-      
+
       // Close popup after a short delay
       setTimeout(() => {
         window.close();
       }, 2000);
-      
+
     } catch (error) {
       console.error('Error diagnosis error:', error);
       errorStatusSection.querySelector('.status-text').textContent = 'Error: Could not connect to diagnosis service.';
@@ -271,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
         method: 'GET',
         timeout: 5000
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('✅ API Health check successful:', data);
@@ -286,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return false;
     }
   }
-  
+
   // Initialize API health check
   checkApiHealth().then(available => {
     if (available) {
@@ -295,18 +252,18 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('⚠️ AWS Tutor API unavailable, using fallback methods');
     }
   });
-  
+
   // Check if we're on AWS Console
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     const currentTab = tabs[0];
     const isAWSConsole = currentTab.url.includes('console.aws.amazon.com');
-    
+
     if (!isAWSConsole) {
       statusSection.style.display = 'block';
       statusSection.querySelector('.status-text').textContent = 'Please navigate to AWS Console first.';
       startButton.disabled = true;
       goalInput.disabled = true;
-      
+
       // Disable quick goal buttons
       quickGoalButtons.forEach(btn => btn.disabled = true);
     }
