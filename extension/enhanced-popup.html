@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        width: 350px;
+        padding: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 18px;
+        color: #333;
+      }
+
+      .mode-selector {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .mode-btn {
+        flex: 1;
+        padding: 8px 12px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s;
+      }
+
+      .mode-btn.active {
+        border-color: #007bff;
+        background: #f0f8ff;
+        color: #007bff;
+      }
+
+      .input-section {
+        margin-bottom: 16px;
+      }
+
+      .input-section input,
+      .input-section textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+
+      .input-section textarea {
+        height: 60px;
+        resize: vertical;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .btn {
+        flex: 1;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .btn-primary {
+        background: #007bff;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #0056b3;
+      }
+
+      .btn-secondary {
+        background: #6c757d;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #545b62;
+      }
+
+      .btn-success {
+        background: #28a745;
+        color: white;
+      }
+
+      .btn-success:hover {
+        background: #1e7e34;
+      }
+
+      .btn-info {
+        background: #17a2b8;
+        color: white;
+      }
+
+      .btn-info:hover {
+        background: #138496;
+      }
+
+      .status-section {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+      }
+
+      .status-item {
+        margin: 4px 0;
+        font-size: 12px;
+      }
+
+      .quick-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .quick-btn {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        text-align: center;
+      }
+
+      .quick-btn:hover {
+        background: #f8f9fa;
+      }
+
+      .footer {
+        text-align: center;
+        font-size: 11px;
+        color: #666;
+        margin-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🚀 AWS Tutor Enhanced</h1>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="explain">Explain</button>
+      <button class="mode-btn" data-mode="do">Do</button>
+      <button class="mode-btn" data-mode="error">Error Help</button>
+    </div>
+
+    <!-- Input Section -->
+    <div class="input-section">
+      <input
+        type="text"
+        id="goal-input"
+        placeholder="What do you want to do? (e.g., Create a Lambda function)"
+      />
+      <textarea
+        id="context-input"
+        placeholder="Additional context (optional)"
+      ></textarea>
+    </div>
+
+    <!-- Main Action Buttons -->
+    <div class="button-group">
+      <button class="btn btn-primary" id="start-btn">Start Guidance</button>
+      <button class="btn btn-secondary" id="ai-chat-btn">AI Chat</button>
+    </div>
+
+    <!-- Enhanced Features -->
+    <div class="button-group">
+      <button class="btn btn-success" id="enhanced-analysis-btn">
+        Enhanced Analysis
+      </button>
+      <button class="btn btn-info" id="status-btn">System Status</button>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="quick-btn" data-action="lambda">Lambda Setup</button>
+      <button class="quick-btn" data-action="ec2">EC2 Instance</button>
+      <button class="quick-btn" data-action="s3">S3 Bucket</button>
+      <button class="quick-btn" data-action="rds">RDS Database</button>
+    </div>
+
+    <!-- Backend Status -->
+    <div class="status-section">
+      <div id="backend-status">
+        <h4>Backend Status:</h4>
+        <div class="status-item">🔄 Checking...</div>
+      </div>
+    </div>
+
+    <!-- Status Display -->
+    <div id="status-display" style="display: none">
+      <div id="status-content"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Dual Backend: Node.js + Python Agent</p>
+    </div>
+
+    <script src="enhanced-popup.js"></script>
+    <script>
+      // Mode switching
+      document.querySelectorAll(".mode-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll(".mode-btn")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+        });
+      });
+
+      // Quick actions
+      document.querySelectorAll(".quick-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const action = btn.dataset.action;
+          document.getElementById(
+            "goal-input"
+          ).value = `Set up ${action.toUpperCase()}`;
+        });
+      });
+
+      // Start guidance button
+      document
+        .getElementById("start-btn")
+        .addEventListener("click", async () => {
+          const goal = document.getElementById("goal-input").value;
+          const context = document.getElementById("context-input").value;
+
+          if (!goal) {
+            alert("Please enter a goal");
+            return;
+          }
+
+          try {
+            // This would integrate with your existing guidance system
+            console.log("Starting guidance for:", goal);
+            // You can call your existing API functions here
+          } catch (error) {
+            console.error("Guidance failed:", error);
+            alert("Guidance failed: " + error.message);
+          }
+        });
+    </script>
+  </body>
+</html>

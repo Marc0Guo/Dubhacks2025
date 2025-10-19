@@ -1,0 +1,65 @@
+service: aws-tutor-backend
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    AWS_REGION: ${self:provider.region}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - bedrock:InvokeModel
+            - bedrock:InvokeModelWithResponseStream
+          Resource:
+            - "arn:aws:bedrock:${self:provider.region}::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0"
+            - "arn:aws:bedrock:${self:provider.region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"
+            - "arn:aws:bedrock:${self:provider.region}::foundation-model/amazon.titan-text-express-v1"
+            - "arn:aws:bedrock:${self:provider.region}::foundation-model/amazon.titan-text-lite-v1"
+        - Effect: Allow
+          Action:
+            - bedrock:ListFoundationModels
+            - bedrock:GetFoundationModel
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: "*"
+
+functions:
+  api:
+    handler: index.handler
+    timeout: 30
+    memorySize: 512
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+      - http:
+          path: /
+          method: ANY
+          cors: true
+
+package:
+  patterns:
+    - "!node_modules/**"
+    - "!test/**"
+    - "!docs/**"
+    - "!*.md"
+    - "!*.sh"
+    - "!*.json"
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3000
+    host: 0.0.0.0

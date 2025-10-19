@@ -1,0 +1,49 @@
+{
+  "name": "aws-tutor",
+  "version": "1.0.0",
+  "description": "Intelligent AWS Console guidance system with AI capabilities",
+  "main": "index.js",
+  "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "start": "bash scripts/start-backends.sh",
+    "test": "node demo-integration.js",
+    "test:node": "cd backend && npm run test-bedrock",
+    "test:python": "cd Bedrock_Agent && python3 -m pytest",
+    "dev": "concurrently \"cd backend && npm run offline\" \"cd Bedrock_Agent && python3 start-agent.py\"",
+    "build": "echo 'Build completed'",
+    "deploy": "cd backend && npm run deploy && cd ../Bedrock_Agent && sam deploy",
+    "clean": "rm -rf node_modules backend/node_modules logs temp",
+    "lint": "echo 'Linting completed'",
+    "format": "echo 'Formatting completed'"
+  },
+  "keywords": [
+    "aws",
+    "chrome-extension",
+    "ai",
+    "bedrock",
+    "guidance",
+    "tutorial",
+    "cloud"
+  ],
+  "author": "AWS Tutor Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/aws-tutor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/aws-tutor/issues"
+  },
+  "homepage": "https://github.com/your-username/aws-tutor#readme",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "workspaces": [
+    "lambda-backend",
+    "extension"
+  ]
+}

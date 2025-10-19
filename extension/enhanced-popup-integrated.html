@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        width: 380px;
+        padding: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 20px;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .status-bar {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .status-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .mode-selector {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .mode-btn {
+        flex: 1;
+        padding: 10px 12px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+        backdrop-filter: blur(10px);
+      }
+
+      .mode-btn.active {
+        border-color: #4caf50;
+        background: rgba(76, 175, 80, 0.3);
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+      }
+
+      .input-section {
+        margin-bottom: 16px;
+      }
+
+      .input-section input,
+      .input-section textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+        backdrop-filter: blur(10px);
+      }
+
+      .input-section input::placeholder,
+      .input-section textarea::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .button-group {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .btn {
+        flex: 1;
+        padding: 12px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        backdrop-filter: blur(10px);
+      }
+
+      .btn-primary {
+        background: linear-gradient(45deg, #4caf50, #45a049);
+        color: white;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(45deg, #2196f3, #1976d2);
+        color: white;
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+      }
+
+      .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+      }
+
+      .btn-ai {
+        background: linear-gradient(45deg, #ff9800, #f57c00);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+      }
+
+      .btn-ai:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .feature-btn {
+        padding: 10px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        text-align: center;
+        transition: all 0.2s;
+        backdrop-filter: blur(10px);
+      }
+
+      .feature-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-1px);
+      }
+
+      .demo-section {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        backdrop-filter: blur(10px);
+      }
+
+      .demo-section h4 {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        color: #4caf50;
+      }
+
+      .demo-btn {
+        width: 100%;
+        padding: 8px 12px;
+        background: linear-gradient(45deg, #9c27b0, #7b1fa2);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        margin: 4px 0;
+        transition: all 0.2s;
+      }
+
+      .demo-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+      }
+
+      .footer {
+        text-align: center;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 16px;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .spinner {
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🚀 AWS Tutor Enhanced</h1>
+      <div class="status-bar">
+        <div class="status-item">
+          <span id="node-status">🔄</span>
+          <span>Node.js Backend</span>
+        </div>
+        <div class="status-item">
+          <span id="python-status">🔄</span>
+          <span>Python Agent</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="guidance">AWS Guidance</button>
+      <button class="mode-btn" data-mode="ai">AI Chat</button>
+      <button class="mode-btn" data-mode="analysis">Element Analysis</button>
+    </div>
+
+    <!-- Input Section -->
+    <div class="input-section">
+      <input
+        type="text"
+        id="goal-input"
+        placeholder="What do you want to do? (e.g., Create a Lambda function)"
+      />
+      <textarea
+        id="context-input"
+        placeholder="Additional context (optional)"
+      ></textarea>
+    </div>
+
+    <!-- Main Action Buttons -->
+    <div class="button-group">
+      <button class="btn btn-primary" id="start-guidance-btn">
+        Start Guidance
+      </button>
+      <button class="btn btn-secondary" id="ai-chat-btn">AI Chat</button>
+    </div>
+
+    <!-- Feature Buttons -->
+    <div class="feature-grid">
+      <button class="feature-btn" data-action="lambda">Lambda Setup</button>
+      <button class="feature-btn" data-action="ec2">EC2 Instance</button>
+      <button class="feature-btn" data-action="s3">S3 Bucket</button>
+      <button class="feature-btn" data-action="rds">RDS Database</button>
+    </div>
+
+    <!-- Demo Section -->
+    <div class="demo-section">
+      <h4>🎯 Live Demo</h4>
+      <button class="demo-btn" id="demo-element-analysis">
+        Test Element Analysis
+      </button>
+      <button class="demo-btn" id="demo-ai-conversation">
+        Test AI Conversation
+      </button>
+      <button class="demo-btn" id="demo-aws-guidance">Test AWS Guidance</button>
+      <button class="demo-btn" id="demo-both-systems">Test Both Systems</button>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div>Processing with AI...</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Dual Backend: Node.js + Python Bedrock Agent</p>
+    </div>
+
+    <script type="module">
+      import { enhancedAPI } from "./enhanced-api.js";
+
+      class EnhancedPopup {
+        constructor() {
+          this.api = enhancedAPI;
+          this.currentMode = "guidance";
+          this.init();
+        }
+
+        async init() {
+          // Check backend availability
+          await this.updateStatus();
+
+          // Set up event listeners
+          this.setupEventListeners();
+
+          // Auto-refresh status every 5 seconds
+          setInterval(() => this.updateStatus(), 5000);
+        }
+
+        async updateStatus() {
+          const status = this.api.getStatus();
+
+          document.getElementById("node-status").textContent =
+            status.nodeBackend ? "✅" : "❌";
+          document.getElementById("python-status").textContent =
+            status.pythonAgent ? "✅" : "❌";
+        }
+
+        setupEventListeners() {
+          // Mode switching
+          document.querySelectorAll(".mode-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              document
+                .querySelectorAll(".mode-btn")
+                .forEach((b) => b.classList.remove("active"));
+              btn.classList.add("active");
+              this.currentMode = btn.dataset.mode;
+              this.updateUI();
+            });
+          });
+
+          // Feature buttons
+          document.querySelectorAll(".feature-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const action = btn.dataset.action;
+              document.getElementById(
+                "goal-input"
+              ).value = `Set up ${action.toUpperCase()}`;
+            });
+          });
+
+          // Main buttons
+          document
+            .getElementById("start-guidance-btn")
+            .addEventListener("click", () => this.startGuidance());
+          document
+            .getElementById("ai-chat-btn")
+            .addEventListener("click", () => this.startAIChat());
+
+          // Demo buttons
+          document
+            .getElementById("demo-element-analysis")
+            .addEventListener("click", () => this.demoElementAnalysis());
+          document
+            .getElementById("demo-ai-conversation")
+            .addEventListener("click", () => this.demoAIConversation());
+          document
+            .getElementById("demo-aws-guidance")
+            .addEventListener("click", () => this.demoAWSGuidance());
+          document
+            .getElementById("demo-both-systems")
+            .addEventListener("click", () => this.demoBothSystems());
+        }
+
+        updateUI() {
+          const guidanceBtn = document.getElementById("start-guidance-btn");
+          const aiBtn = document.getElementById("ai-chat-btn");
+
+          if (this.currentMode === "guidance") {
+            guidanceBtn.style.display = "block";
+            aiBtn.style.display = "none";
+          } else if (this.currentMode === "ai") {
+            guidanceBtn.style.display = "none";
+            aiBtn.style.display = "block";
+          } else {
+            guidanceBtn.style.display = "block";
+            aiBtn.style.display = "block";
+          }
+        }
+
+        async startGuidance() {
+          const goal = document.getElementById("goal-input").value;
+          if (!goal) {
+            alert("Please enter a goal");
+            return;
+          }
+
+          this.showLoading(true);
+          try {
+            const guidance = await this.api.getAWSGuidance(goal);
+            this.showResult("AWS Guidance", guidance);
+          } catch (error) {
+            this.showError("Guidance failed: " + error.message);
+          } finally {
+            this.showLoading(false);
+          }
+        }
+
+        async startAIChat() {
+          const question = prompt("Ask the AI agent anything:");
+          if (!question) return;
+
+          this.showLoading(true);
+          try {
+            const response = await this.api.getAIConversation(question);
+            this.showResult("AI Response", { reply: response });
+          } catch (error) {
+            this.showError("AI Chat failed: " + error.message);
+          } finally {
+            this.showLoading(false);
+          }
+        }
+
+        // Demo functions
+        async demoElementAnalysis() {
+          this.showLoading(true);
+          try {
+            // Simulate element data
+            const mockElement = {
+              tagName: "button",
+              id: "create-function",
+              className: "btn btn-primary",
+              textContent: "Create Function",
+              attributes: {
+                type: "button",
+                onclick: "createFunction()",
+              },
+            };
+
+            const analysis = await this.api.analyzeElement(mockElement, true);
+            this.showResult("Element Analysis", {
+              source: analysis.source,
+              type: analysis.type,
+              explanation: analysis.explanation,
+            });
+          } catch (error) {
+            this.showError("Element analysis failed: " + error.message);
+          } finally {
+            this.showLoading(false);
+          }
+        }
+
+        async demoAIConversation() {
+          this.showLoading(true);
+          try {
+            const response = await this.api.getAIConversation(
+              "What time is it?"
+            );
+            this.showResult("AI Conversation", { reply: response });
+          } catch (error) {
+            this.showError("AI conversation failed: " + error.message);
+          } finally {
+            this.showLoading(false);
+          }
+        }
+
+        async demoAWSGuidance() {
+          this.showLoading(true);
+          try {
+            const guidance = await this.api.getAWSGuidance(
+              "Create a serverless API"
+            );
+            this.showResult("AWS Guidance", guidance);
+          } catch (error) {
+            this.showError("AWS guidance failed: " + error.message);
+          } finally {
+            this.showLoading(false);
+          }
+        }
+
+        async demoBothSystems() {
+          this.showLoading(true);
+          try {
+            // Test both systems
+            const [guidance, aiResponse] = await Promise.all([
+              this.api.getAWSGuidance("Set up a Lambda function"),
+              this.api.getAIConversation("Explain AWS Lambda in simple terms"),
+            ]);
+
+            this.showResult("Both Systems Working", {
+              awsGuidance: guidance,
+              aiResponse: { reply: aiResponse },
+              status: this.api.getStatus(),
+            });
+          } catch (error) {
+            this.showError("Demo failed: " + error.message);
+          } finally {
+            this.showLoading(false);
+          }
+        }
+
+        showLoading(show) {
+          document.getElementById("loading").style.display = show
+            ? "block"
+            : "none";
+        }
+
+        showResult(title, data) {
+          const result = JSON.stringify(data, null, 2);
+          alert(`${title}:\n\n${result}`);
+        }
+
+        showError(message) {
+          alert("Error: " + message);
+        }
+      }
+
+      // Initialize when DOM is loaded
+      document.addEventListener("DOMContentLoaded", () => {
+        new EnhancedPopup();
+      });
+    </script>
+  </body>
+</html>
