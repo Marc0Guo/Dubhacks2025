@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Function to get predefined goal text
   function getGoalText(goalType) {
     const goals = {
+      'launch-instance': 'I want to launch an EC2 instance',
       'deploy-web-app': 'I want to deploy a web application',
       'setup-database': 'Set up a database for my app',
       'create-api': 'Create a serverless API',

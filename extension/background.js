@@ -36,6 +36,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       handleStopGuidance(sendResponse);
       break;
       
+    case 'pageChanged':
+      handlePageChange(request.url, sendResponse);
+      break;
+      
+    case 'navigateToUrl':
+      handleNavigation(request.url, sendResponse);
+      return true;
+      
     default:
       sendResponse({ success: false, error: 'Unknown action' });
   }
@@ -153,6 +161,114 @@ function generateWorkflow(goal) {
           title: 'Choose AMI',
           description: 'Select an Amazon Machine Image for your application',
           selector: '[data-testid="ami-selection"]',
+          action: 'click',
+          page: 'ec2.console.aws.amazon.com'
+        }
+      ]
+    };
+  }
+  
+  // Detailed EC2 Instance Launch Workflow
+  if (goalLower.includes('launch') && goalLower.includes('instance')) {
+    return {
+      name: 'Launch EC2 Instance',
+      service: 'EC2',
+      steps: [
+        {
+          id: 1,
+          title: 'Navigate to EC2 Console',
+          description: 'Open the Amazon EC2 console at <a href="https://console.aws.amazon.com/ec2/" target="_blank" style="color: #ff4444; text-decoration: underline;">https://console.aws.amazon.com/ec2/</a>',
+          selector: '[data-testid="ec2"]',
+          action: 'click',
+          page: 'console.aws.amazon.com',
+          targetPage: 'ec2.console.aws.amazon.com',
+          navigationUrl: 'https://console.aws.amazon.com/ec2/'
+        },
+        {
+          id: 2,
+          title: 'Launch Instance',
+          description: 'From the EC2 console dashboard, in the Launch instance pane, choose Launch instance',
+          selector: 'a[data-analytics="launch-an-instance-button"]',
+          action: 'click',
+          page: 'ec2.console.aws.amazon.com'
+        },
+        {
+          id: 3,
+          title: 'Enter Instance Name',
+          description: 'Under Name and tags, for Name, enter a descriptive name for your instance',
+          selector: '[data-testid="instance-name"]',
+          action: 'fill',
+          page: 'ec2.console.aws.amazon.com'
+        },
+        {
+          id: 4,
+          title: 'Choose Operating System',
+          description: 'Under Application and OS Images, choose Quick Start, and then choose the operating system (OS) for your instance. For your first Linux instance, we recommend Amazon Linux',
+          selector: '[data-testid="ami-quick-start"]',
+          action: 'click',
+          page: 'ec2.console.aws.amazon.com'
+        },
+        {
+          id: 5,
+          title: 'Select Free Tier AMI',
+          description: 'From Amazon Machine Image (AMI), select an AMI that is marked Free Tier eligible',
+          selector: '[data-testid="free-tier-ami"]',
+          action: 'click',
+          page: 'ec2.console.aws.amazon.com'
+        },
+        {
+          id: 6,
+          title: 'Choose Instance Type',
+          description: 'Under Instance type, for Instance type, select an instance type that is marked Free Tier eligible',
+          selector: '[data-testid="instance-type"]',
+          action: 'click',
+          page: 'ec2.console.aws.amazon.com'
+        },
+        {
+          id: 7,
+          title: 'Create Key Pair',
+          description: 'Under Key pair (login), for Key pair name, choose an existing key pair or choose Create new key pair to create your first key pair',
+          selector: '[data-testid="key-pair"]',
+          action: 'click',
+          page: 'ec2.console.aws.amazon.com'
+        },
+        {
+          id: 8,
+          title: 'Configure Network Settings',
+          description: 'Under Network settings, notice that we selected your default VPC and configured a security group. For your first instance, we recommend that you use the default settings',
+          selector: '[data-testid="network-settings"]',
+          action: 'click',
+          page: 'ec2.console.aws.amazon.com'
+        },
+        {
+          id: 9,
+          title: 'Configure Storage',
+          description: 'Under Configure storage, notice that we configured a root volume but no data volumes. This is sufficient for test purposes',
+          selector: '[data-testid="storage-config"]',
+          action: 'click',
+          page: 'ec2.console.aws.amazon.com'
+        },
+        {
+          id: 10,
+          title: 'Review and Launch',
+          description: 'Review a summary of your instance configuration in the Summary panel, and when you\'re ready, choose Launch instance',
+          selector: '[data-testid="launch-instance-button"]',
+          action: 'click',
+          page: 'ec2.console.aws.amazon.com'
+        },
+        {
+          id: 11,
+          title: 'Monitor Instance Status',
+          description: 'If the launch is successful, choose the ID of the instance from the Success notification to open the Instances page and monitor the status of the launch',
+          selector: '[data-testid="instance-id"]',
+          action: 'click',
+          page: 'ec2.console.aws.amazon.com'
+        },
+        {
+          id: 12,
+          title: 'Check Instance State',
+          description: 'Select the checkbox for the instance. The initial instance state is pending. After the instance starts, its state changes to running. Choose the Status and alarms tab',
+          selector: '[data-testid="instance-checkbox"]',
           action: 'click',
           page: 'ec2.console.aws.amazon.com'
         }
@@ -300,6 +416,66 @@ function loadWorkflowState() {
   chrome.storage.local.get(['workflowState'], (result) => {
     if (result.workflowState) {
       workflowState = result.workflowState;
+    }
+  });
+}
+
+// Handle page change detection
+function handlePageChange(url, sendResponse) {
+  console.log('Page changed to:', url);
+  
+  if (workflowState.isActive && currentWorkflow) {
+    const currentStepData = workflowState.steps[workflowState.currentStep];
+    
+    // Check if the page change matches the expected target page for current step
+    if (currentStepData && currentStepData.targetPage && url.includes(currentStepData.targetPage)) {
+      console.log('Page change matches expected target, advancing to next step');
+      
+      // Auto-advance to next step
+      if (workflowState.currentStep < workflowState.totalSteps - 1) {
+        workflowState.currentStep++;
+        
+        // Send updated step to content script
+        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+          if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+              action: 'updateStep',
+              step: workflowState.steps[workflowState.currentStep],
+              stepNumber: workflowState.currentStep + 1,
+              totalSteps: workflowState.totalSteps
+            });
+          }
+        });
+        
+        sendResponse({ success: true, advanced: true, step: workflowState.steps[workflowState.currentStep] });
+      } else {
+        sendResponse({ success: true, advanced: false, message: 'Workflow completed' });
+      }
+    } else {
+      sendResponse({ success: true, advanced: false, message: 'Page change detected but no auto-advance' });
+    }
+  } else {
+    sendResponse({ success: true, advanced: false, message: 'No active workflow' });
+  }
+}
+
+// Handle navigation to specific URL
+function handleNavigation(url, sendResponse) {
+  console.log('Navigating to:', url);
+  
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    if (tabs[0]) {
+      chrome.tabs.update(tabs[0].id, { url: url }, (updatedTab) => {
+        if (chrome.runtime.lastError) {
+          console.error('Navigation error:', chrome.runtime.lastError);
+          sendResponse({ success: false, error: chrome.runtime.lastError.message });
+        } else {
+          console.log('Navigation successful to:', url);
+          sendResponse({ success: true, url: url });
+        }
+      });
+    } else {
+      sendResponse({ success: false, error: 'No active tab found' });
     }
   });
 }
