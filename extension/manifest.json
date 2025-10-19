@@ -6,14 +6,12 @@
   "permissions": [
     "activeTab",
     "storage",
-    "scripting",
-    "identity"
+    "scripting"
   ],
   "host_permissions": [
     "https://console.aws.amazon.com/*",
     "https://*.console.aws.amazon.com/*",
-    "https://bedrock-runtime.us-east-1.amazonaws.com/*",
-    "https://bedrock-runtime.*.amazonaws.com/*"
+    "https://api.thishurtyougave.select/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -34,7 +32,7 @@
         "https://console.aws.amazon.com/*",
         "https://*.console.aws.amazon.com/*"
       ],
-      "js": ["aws-bedrock.js", "content.js"],
+      "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_end"
     }

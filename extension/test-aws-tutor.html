@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AWS Tutor Test Page</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #232f3e;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .test-section {
+        margin: 30px 0;
+        padding: 20px;
+        border: 2px solid #e1e5e9;
+        border-radius: 8px;
+        background: #f9f9f9;
+      }
+      .test-section h3 {
+        color: #232f3e;
+        margin-top: 0;
+      }
+      .test-button {
+        background: #ff9900;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px 5px;
+        transition: background 0.2s;
+      }
+      .test-button:hover {
+        background: #e68900;
+      }
+      .test-button.secondary {
+        background: #146eb4;
+      }
+      .test-button.secondary:hover {
+        background: #0f5a8a;
+      }
+      .test-button.error {
+        background: #d13212;
+      }
+      .test-button.error:hover {
+        background: #b52d0f;
+      }
+      .instructions {
+        background: #e7f3ff;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 15px 0;
+        border-left: 4px solid #146eb4;
+      }
+      .status {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 4px;
+        display: none;
+      }
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .status.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧪 AWS Tutor Test Page</h1>
+
+      <div class="instructions">
+        <strong>How to test:</strong>
+        <ol>
+          <li>Make sure the AWS Tutor extension is loaded in Chrome</li>
+          <li>Click the extension icon in your browser toolbar</li>
+          <li>Try each of the three modes below</li>
+          <li>Check the browser console (F12) for debug information</li>
+        </ol>
+      </div>
+
+      <!-- Test Mode 1: Explain Mode -->
+      <div class="test-section">
+        <h3>🧠 Explain Mode Test</h3>
+        <p>Test the AI-powered explanation feature:</p>
+        <button class="test-button" onclick="testExplainMode()">
+          Test Explain Mode
+        </button>
+        <div class="instructions">
+          <strong>What to do:</strong>
+          <ol>
+            <li>Click the extension icon</li>
+            <li>Select "🧠 Explain Mode"</li>
+            <li>Type: "What is temperature in Bedrock?"</li>
+            <li>Click "Explain"</li>
+            <li>
+              Check if you get an explanation (API may not be deployed yet)
+            </li>
+          </ol>
+        </div>
+        <div id="explain-status" class="status"></div>
+      </div>
+
+      <!-- Test Mode 2: Do Mode -->
+      <div class="test-section">
+        <h3>🎯 Do Mode Test</h3>
+        <p>Test the step-by-step guidance feature:</p>
+        <button class="test-button secondary" onclick="testDoMode()">
+          Test Do Mode
+        </button>
+        <div class="instructions">
+          <strong>What to do:</strong>
+          <ol>
+            <li>Click the extension icon</li>
+            <li>Select "🎯 Do Mode" (should be default)</li>
+            <li>Type: "I want to launch an EC2 instance"</li>
+            <li>Click "Start Guide"</li>
+            <li>Follow the visual guidance (red pulsing borders)</li>
+          </ol>
+        </div>
+        <div id="do-status" class="status"></div>
+      </div>
+
+      <!-- Test Mode 3: Error Whisperer -->
+      <div class="test-section">
+        <h3>🔧 Error Whisperer Test</h3>
+        <p>Test the error diagnosis feature:</p>
+        <button class="test-button error" onclick="testErrorMode()">
+          Test Error Mode
+        </button>
+        <div class="instructions">
+          <strong>What to do:</strong>
+          <ol>
+            <li>Click the extension icon</li>
+            <li>Select "🔧 Error Whisperer"</li>
+            <li>Type: "AccessDeniedException when calling Bedrock"</li>
+            <li>Click "Diagnose"</li>
+            <li>Check if you get error help (API may not be deployed yet)</li>
+          </ol>
+        </div>
+        <div id="error-status" class="status"></div>
+      </div>
+
+      <!-- API Status -->
+      <div class="test-section">
+        <h3>🌐 API Status Check</h3>
+        <p>Check if the backend API is available:</p>
+        <button class="test-button" onclick="checkApiStatus()">
+          Check API Status
+        </button>
+        <div id="api-status" class="status"></div>
+      </div>
+
+      <!-- Console Instructions -->
+      <div class="instructions">
+        <strong>Debug Information:</strong>
+        <ul>
+          <li>Open Chrome DevTools (F12)</li>
+          <li>Go to Console tab</li>
+          <li>Look for messages starting with 🔍, ✅, ❌, or 🚀</li>
+          <li>Check Network tab for API calls</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      function showStatus(elementId, message, isError = false) {
+        const element = document.getElementById(elementId);
+        element.textContent = message;
+        element.className = `status ${isError ? "error" : "success"}`;
+        element.style.display = "block";
+      }
+
+      function testExplainMode() {
+        showStatus(
+          "explain-status",
+          "Testing Explain Mode... Check the extension popup!",
+          false
+        );
+      }
+
+      function testDoMode() {
+        showStatus(
+          "do-status",
+          "Testing Do Mode... Check the extension popup!",
+          false
+        );
+      }
+
+      function testErrorMode() {
+        showStatus(
+          "error-status",
+          "Testing Error Mode... Check the extension popup!",
+          false
+        );
+      }
+
+      async function checkApiStatus() {
+        showStatus("api-status", "Checking API status...", false);
+
+        try {
+          const response = await fetch(
+            "https://api.thishurtyougave.select/health"
+          );
+          if (response.ok) {
+            const data = await response.json();
+            showStatus(
+              "api-status",
+              `✅ API is healthy: ${data.status}`,
+              false
+            );
+          } else {
+            showStatus(
+              "api-status",
+              `❌ API returned status: ${response.status}`,
+              true
+            );
+          }
+        } catch (error) {
+          showStatus(
+            "api-status",
+            `❌ API not available: ${error.message}`,
+            true
+          );
+        }
+      }
+
+      // Auto-check API status on page load
+      window.addEventListener("load", () => {
+        setTimeout(checkApiStatus, 1000);
+      });
+    </script>
+  </body>
+</html>

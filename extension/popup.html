@@ -115,49 +115,6 @@
       .mode-content:not(#do-mode) .footer {
         display: none;
       }
-
-      .explain-mode-info {
-        text-align: center;
-        padding: 20px;
-      }
-
-      .explain-mode-info h3 {
-        color: #4f46e5;
-        margin-bottom: 16px;
-        font-size: 20px;
-      }
-
-      .explain-mode-info p {
-        color: #6b7280;
-        margin-bottom: 24px;
-        line-height: 1.5;
-      }
-
-      .explain-features {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-bottom: 24px;
-      }
-
-      .feature-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
-        background: #f8fafc;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-      }
-
-      .feature-icon {
-        font-size: 20px;
-      }
-
-      .feature-item span:last-child {
-        color: #374151;
-        font-weight: 500;
-      }
     </style>
   </head>
 
@@ -185,29 +142,20 @@
 
         <!-- Explain Mode Content -->
         <div id="explain-mode" class="mode-content">
-          <div class="explain-mode-info">
-            <h3>🧠 Explain Mode</h3>
-            <p>Click on any element in the AWS Console to get an AI-powered explanation of what it does and how to use it.</p>
-            <div class="explain-features">
-              <div class="feature-item">
-                <span class="feature-icon">🎯</span>
-                <span>Click any AWS element</span>
-              </div>
-              <div class="feature-item">
-                <span class="feature-icon">🤖</span>
-                <span>Get instant AI explanations</span>
-              </div>
-              <div class="feature-item">
-                <span class="feature-icon">💡</span>
-                <span>Learn best practices</span>
-              </div>
-            </div>
-            <button id="start-explain" class="start-button">Start Explain Mode</button>
+          <div class="input-section">
+            <label for="explain-input" class="input-label">What AWS concept would you like me to explain?</label>
+            <textarea 
+              id="explain-input" 
+              class="goal-input" 
+              placeholder="Ask me about any AWS service, concept, or best practice...&#10;&#10;Examples:&#10;• What is Amazon S3?&#10;• How does EC2 auto-scaling work?&#10;• What's the difference between RDS and DynamoDB?"
+              rows="4"
+            ></textarea>
+            <button id="start-explain" class="start-button" disabled>Explain</button>
           </div>
-
+          
           <div class="status-section" id="explain-status-section" style="display: none;">
             <div class="status-indicator">
-              <span class="status-text">Explain mode is active! Click any element in the AWS Console.</span>
+              <span class="status-text">Ready to explain!</span>
             </div>
           </div>
         </div>
@@ -216,15 +164,15 @@
         <div id="do-mode" class="mode-content active">
           <div class="input-section">
             <label for="goal-input" class="input-label">What would you like to build?</label>
-            <textarea
-              id="goal-input"
-              class="goal-input"
+            <textarea 
+              id="goal-input" 
+              class="goal-input" 
               placeholder="Describe your goal in plain English...&#10;&#10;Examples:&#10;• I want to deploy a web application&#10;• Set up a database for my app&#10;• Create a serverless API"
               rows="4"
             ></textarea>
             <button id="start-guide" class="start-button" disabled>Start Guide</button>
           </div>
-
+          
           <div class="quick-goals">
             <h3>Quick Start</h3>
             <div class="goal-buttons">
@@ -235,7 +183,7 @@
               <button class="quick-goal-btn" data-goal="host-static-site">Host Static Site</button>
             </div>
           </div>
-
+          
           <div class="status-section" id="status-section" style="display: none;">
             <div class="status-indicator">
               <span class="status-text">Ready to guide you!</span>
@@ -247,15 +195,15 @@
         <div id="error-mode" class="mode-content">
           <div class="input-section">
             <label for="error-input" class="input-label">What AWS error are you encountering?</label>
-            <textarea
-              id="error-input"
-              class="goal-input"
+            <textarea 
+              id="error-input" 
+              class="goal-input" 
               placeholder="Describe the error you're seeing or paste the error message...&#10;&#10;Examples:&#10;• Access Denied when trying to create S3 bucket&#10;• EC2 instance failed to launch&#10;• Lambda function timeout error"
               rows="4"
             ></textarea>
             <button id="start-error" class="start-button" disabled>Diagnose</button>
           </div>
-
+          
           <div class="status-section" id="error-status-section" style="display: none;">
             <div class="status-indicator">
               <span class="status-text">Ready to diagnose!</span>
@@ -265,7 +213,7 @@
       </main>
 
       <footer class="footer">
-        <a href="settings.html" target="_blank" id="settings-btn" class="settings-button">Settings</a>
+        <button id="settings-btn" class="settings-button">Settings</button>
         <button id="help-btn" class="help-button">Help</button>
       </footer>
     </div>

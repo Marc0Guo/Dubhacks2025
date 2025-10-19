@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AWS Tutor - AI Console Assistant</title>
+    <link rel="stylesheet" href="styles/popup.css" />
+
+    <style>
+      html, body {
+        width: 550px;
+        height: 600px;
+        margin: 0;
+        padding: 0;
+        overflow: auto;
+        background-color: #f9fafb;
+      }
+
+      .container {
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      h1 {
+        font-size: 24px;
+        color: #e3e2eb;
+        text-align: center;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #b7c8eb;
+        font-size: 14px;
+        margin-top: -8px;
+      }
+
+      .mode-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .mode-buttons button {
+        flex: 1;
+        margin: 0;
+        border-radius: 8px;
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 20px;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .footer button {
+        background: #4f46e5;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.2s;
+      }
+
+      .footer button:hover {
+        background: #e1dff8;
+      }
+
+      .mode-content {
+        display: none;
+      }
+
+      .mode-content.active {
+        display: block;
+      }
+
+      .mode-btn {
+        background: #4f46e5;
+        color: white;
+        border: none;
+        padding: 12px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.2s;
+        margin: 5px 0;
+      }
+
+      .mode-btn:hover {
+        background: #3730a3;
+      }
+
+      .mode-btn.active {
+        background: #7c3aed;
+      }
+
+      .placeholder-content {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6b7280;
+      }
+
+      .placeholder-content h3 {
+        color: #374151;
+        margin-bottom: 16px;
+      }
+
+      .placeholder-content p {
+        margin: 8px 0;
+      }
+
+      .mode-content:not(#do-mode) .footer {
+        display: none;
+      }
+
+      .explain-mode-info {
+        text-align: center;
+        padding: 20px;
+      }
+
+      .explain-mode-info h3 {
+        color: #4f46e5;
+        margin-bottom: 16px;
+        font-size: 20px;
+      }
+
+      .explain-mode-info p {
+        color: #6b7280;
+        margin-bottom: 24px;
+        line-height: 1.5;
+      }
+
+      .explain-features {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .feature-icon {
+        font-size: 20px;
+      }
+
+      .feature-item span:last-child {
+        color: #374151;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <header class="header">
+        <h1>AWS Tutor</h1>
+        <p class="subtitle">AI-powered AWS Console assistant</p>
+      </header>
+
+      <main class="main">
+        <!-- Mode Selection -->
+        <div class="mode-selection">
+          <h3>Choose Mode</h3>
+          <div class="mode-buttons">
+            <button class="mode-btn active" data-mode="explain">
+              🧠 Explain Mode
+            </button>
+            <button class="mode-btn" data-mode="do">🎯 Do Mode</button>
+            <button class="mode-btn" data-mode="error">
+              🔧 Error Whisperer
+            </button>
+          </div>
+        </div>
+
+        <!-- Explain Mode Content -->
+        <div id="explain-mode" class="mode-content">
+          <div class="explain-mode-info">
+            <h3>🧠 Explain Mode</h3>
+            <p>Click on any element in the AWS Console to get an AI-powered explanation of what it does and how to use it.</p>
+            <div class="explain-features">
+              <div class="feature-item">
+                <span class="feature-icon">🎯</span>
+                <span>Click any AWS element</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">🤖</span>
+                <span>Get instant AI explanations</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">💡</span>
+                <span>Learn best practices</span>
+              </div>
+            </div>
+            <button id="start-explain" class="start-button">Start Explain Mode</button>
+          </div>
+
+          <div class="status-section" id="explain-status-section" style="display: none;">
+            <div class="status-indicator">
+              <span class="status-text">Explain mode is active! Click any element in the AWS Console.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Do Mode Content (Current functionality) -->
+        <div id="do-mode" class="mode-content active">
+          <div class="input-section">
+            <label for="goal-input" class="input-label">What would you like to build?</label>
+            <textarea
+              id="goal-input"
+              class="goal-input"
+              placeholder="Describe your goal in plain English...&#10;&#10;Examples:&#10;• I want to deploy a web application&#10;• Set up a database for my app&#10;• Create a serverless API"
+              rows="4"
+            ></textarea>
+            <button id="start-guide" class="start-button" disabled>Start Guide</button>
+          </div>
+
+          <div class="quick-goals">
+            <h3>Quick Start</h3>
+            <div class="goal-buttons">
+              <button class="quick-goal-btn" data-goal="launch-instance">Launch EC2 Instance</button>
+              <button class="quick-goal-btn" data-goal="deploy-web-app">Deploy Web App</button>
+              <button class="quick-goal-btn" data-goal="setup-database">Setup Database</button>
+              <button class="quick-goal-btn" data-goal="create-api">Create API</button>
+              <button class="quick-goal-btn" data-goal="host-static-site">Host Static Site</button>
+            </div>
+          </div>
+
+          <div class="status-section" id="status-section" style="display: none;">
+            <div class="status-indicator">
+              <span class="status-text">Ready to guide you!</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error Mode Content -->
+        <div id="error-mode" class="mode-content">
+          <div class="input-section">
+            <label for="error-input" class="input-label">What AWS error are you encountering?</label>
+            <textarea
+              id="error-input"
+              class="goal-input"
+              placeholder="Describe the error you're seeing or paste the error message...&#10;&#10;Examples:&#10;• Access Denied when trying to create S3 bucket&#10;• EC2 instance failed to launch&#10;• Lambda function timeout error"
+              rows="4"
+            ></textarea>
+            <button id="start-error" class="start-button" disabled>Diagnose</button>
+          </div>
+
+          <div class="status-section" id="error-status-section" style="display: none;">
+            <div class="status-indicator">
+              <span class="status-text">Ready to diagnose!</span>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer class="footer">
+        <a href="settings.html" target="_blank" id="settings-btn" class="settings-button">Settings</a>
+        <button id="help-btn" class="help-button">Help</button>
+      </footer>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

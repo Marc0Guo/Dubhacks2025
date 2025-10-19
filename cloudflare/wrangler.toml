@@ -1,0 +1,17 @@
+name = "aws-tutor-worker"
+main = "worker.js"
+compatibility_date = "2024-10-01"
+
+# Route configuration for the custom domain
+routes = [
+  { pattern = "api.thishurtyougave.select/*", zone_name = "thishurtyougave.select" }
+]
+
+# Environment variables (if needed)
+[vars]
+ENVIRONMENT = "production"
+
+# KV namespaces (if needed for caching)
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "your-kv-namespace-id"
