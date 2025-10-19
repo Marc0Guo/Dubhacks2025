@@ -1,6 +1,6 @@
 # AWS Console Navigator
 
-An intelligent Chrome extension that guides users through AWS Console workflows using visual navigation cues and natural language input.
+An intelligent Chrome extension that guides users through AWS Console workflows using visual navigation cues and natural language input. Built for Dubhacks 2025, this extension makes AWS accessible to beginners and streamlines complex cloud operations.
 
 ## 🚀 Features
 
@@ -10,6 +10,7 @@ An intelligent Chrome extension that guides users through AWS Console workflows 
 - **Step-by-Step Guidance**: Break down complex AWS workflows into manageable steps
 - **Smart Page Detection**: Automatically detects page changes and advances workflow
 - **Clickable Navigation**: Direct links to AWS services with automatic page tracking
+- **Multi-Mode Interface**: Explain, Do, and Error Whisperer modes for different use cases
 
 ### Supported Workflows
 - **EC2 Instance Launch**: Complete 12-step workflow for launching EC2 instances
@@ -21,22 +22,28 @@ An intelligent Chrome extension that guides users through AWS Console workflows 
 ## 📁 Project Structure
 
 ```
-extension/
-├── manifest.json          # Chrome extension configuration
-├── popup.html             # Extension popup interface
-├── popup.js               # Popup functionality
-├── popup.css              # Popup styling
-├── background.js          # Service worker and workflow management
-├── content.js             # DOM manipulation and visual cues
-├── content.css            # Visual cue styling
-├── icons/                 # Extension icons
-│   ├── icon16.png
-│   ├── icon32.png
-│   ├── icon48.png
-│   └── icon128.png
-├── test-ec2-workflow.html # Testing page for EC2 workflow
-└── styles/
-    └── popup.css          # Additional popup styles
+Dubhacks2025/
+├── extension/                    # Chrome extension source code
+│   ├── manifest.json            # Chrome extension configuration
+│   ├── popup.html               # Extension popup interface
+│   ├── popup.js                 # Popup functionality
+│   ├── background.js            # Service worker and workflow management
+│   ├── content.js               # DOM manipulation and visual cues
+│   ├── content.css              # Visual cue styling
+│   ├── icons/                   # Extension icons
+│   │   ├── icon16.png
+│   │   ├── icon32.png
+│   │   ├── icon48.png
+│   │   └── icon128.png
+│   ├── styles/
+│   │   └── popup.css            # Popup styling
+│   ├── test-ec2-workflow.html   # Testing page for EC2 workflow
+│   ├── debug-stuck-issue.html   # Debug page for troubleshooting
+│   ├── fix-verification.html    # Verification page for fixes
+│   ├── FIXES_SUMMARY.md         # Summary of bug fixes
+│   └── projectrequirement.txt   # Original project requirements
+├── LICENSE                      # MIT License
+└── README.md                    # This file
 ```
 
 ## 🛠️ Installation
@@ -57,11 +64,17 @@ extension/
 ### Starting a Workflow
 1. Navigate to the AWS Console (`console.aws.amazon.com`)
 2. Click the AWS Console Navigator extension icon
-3. Choose from quick start options or enter your goal in natural language:
-   - "I want to launch an EC2 instance"
-   - "Set up a database for my app"
-   - "Create a serverless API"
-   - "Host a static website"
+3. Choose from three modes:
+   - **🧠 Explain Mode**: Ask questions about AWS concepts
+   - **🎯 Do Mode**: Get step-by-step guidance for tasks
+   - **🔧 Error Whisperer**: Get help with AWS errors
+
+### Do Mode - Step-by-Step Guidance
+Choose from quick start options or enter your goal in natural language:
+- "I want to launch an EC2 instance"
+- "Set up a database for my app"
+- "Create a serverless API"
+- "Host a static website"
 
 ### Following Visual Guidance
 - **Red Pulsing Border**: Highlights the element you need to click
@@ -106,13 +119,12 @@ The extension uses 11 different strategies to find elements:
 
 ## 🧪 Testing
 
-### Test Page
-Use `test-ec2-workflow.html` to test the extension without accessing AWS Console:
+### Test Pages
+The extension includes several test pages for development and debugging:
 
-1. Open the test page in your browser
-2. Click "Start Workflow" to begin testing
-3. Test individual steps with the step buttons
-4. Simulate page navigation with "Simulate EC2 Navigation"
+1. **`test-ec2-workflow.html`**: Test EC2 workflow without AWS Console
+2. **`debug-stuck-issue.html`**: Debug specific issues
+3. **`fix-verification.html`**: Verify bug fixes
 
 ### Debug Information
 The extension provides detailed console logging:
@@ -188,7 +200,16 @@ Enable detailed logging by opening browser DevTools and checking the Console tab
 - ✅ Error state detection
 - ✅ Comprehensive element finding strategies
 - ✅ EC2 instance launch workflow (12 steps)
-- ✅ Test page for development
+- ✅ Multi-mode interface (Explain, Do, Error Whisperer)
+- ✅ Test pages for development
+- ✅ Bug fixes for element detection issues
+
+### Recent Fixes
+- **Fixed freezing issue**: Extension no longer freezes after step 3
+- **Enhanced element detection**: 11 robust search strategies
+- **Better error handling**: Graceful degradation when elements aren't found
+- **Improved UX**: Clear instructions and visual feedback
+- **Workflow completion**: Beautiful completion screen with celebration
 
 ### In Progress
 - 🔄 Additional AWS service workflows
@@ -208,7 +229,7 @@ Enable detailed logging by opening browser DevTools and checking the Console tab
 ### Development Setup
 1. Fork the repository
 2. Make changes in the `extension/` directory
-3. Test using the provided test page
+3. Test using the provided test pages
 4. Submit a pull request with detailed description
 
 ### Code Style
@@ -223,19 +244,22 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🙏 Acknowledgments
 
-- AWS Console UI patterns and element structures
-- Chrome Extension development best practices
-- Web scraping techniques inspired by Beautiful Soup and Selenium
-- Community feedback and testing
+- **Dubhacks 2025**: Hackathon platform and community
+- **AWS Console UI patterns**: Element structures and navigation
+- **Chrome Extension development**: Best practices and documentation
+- **Web scraping techniques**: Inspired by Beautiful Soup and Selenium
+- **Community feedback**: Testing and improvement suggestions
 
 ## 📞 Support
 
 For issues, questions, or contributions:
 - Check the troubleshooting section above
 - Review console logs for debug information
-- Test with the provided test page
+- Test with the provided test pages
 - Submit issues with detailed reproduction steps
 
 ---
 
 **AWS Console Navigator** - Making AWS accessible through intelligent guidance 🚀
+
+*Built for Dubhacks 2025 - Empowering developers to master cloud infrastructure*
