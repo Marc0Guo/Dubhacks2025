@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Console Navigator - Settings</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9fafb;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #4f46e5;
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header p {
+            margin: 8px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        .form-help {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3730a3;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            margin-left: 12px;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .status {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .instructions {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .instructions h3 {
+            margin: 0 0 12px 0;
+            color: #1e40af;
+        }
+
+        .instructions ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #1e40af;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .back-link {
+            color: #4f46e5;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 AWS Settings</h1>
+            <p>Configure your AWS credentials for AI-powered explanations</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h3>📋 Setup Instructions</h3>
+                <ol>
+                    <li>Go to AWS Console → IAM → Users → Your User → Security Credentials</li>
+                    <li>Create a new Access Key with Bedrock permissions</li>
+                    <li>Copy your Access Key ID and Secret Access Key</li>
+                    <li>Paste them below and click "Save & Test"</li>
+                </ol>
+            </div>
+
+            <div id="status" class="status"></div>
+
+            <form id="credentials-form">
+                <div class="form-group">
+                    <label class="form-label" for="access-key-id">AWS Access Key ID</label>
+                    <input type="text" id="access-key-id" class="form-input" placeholder="AKIA..." required>
+                    <div class="form-help">Your AWS Access Key ID</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="secret-access-key">AWS Secret Access Key</label>
+                    <input type="password" id="secret-access-key" class="form-input" placeholder="Your secret key..." required>
+                    <div class="form-help">Your AWS Secret Access Key</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="region">AWS Region</label>
+                    <select id="region" class="form-input">
+                        <option value="us-east-1">US East (N. Virginia) - us-east-1</option>
+                        <option value="us-west-2">US West (Oregon) - us-west-2</option>
+                        <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
+                        <option value="ap-southeast-1">Asia Pacific (Singapore) - ap-southeast-1</option>
+                    </select>
+                    <div class="form-help">Region where Bedrock is available</div>
+                </div>
+
+                <div class="actions">
+                    <a href="popup.html" class="back-link">← Back to Extension</a>
+                    <div>
+                        <button type="button" id="test-btn" class="btn btn-secondary">Test Connection</button>
+                        <button type="submit" id="save-btn" class="btn btn-primary">Save & Test</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Settings page loaded');
+
+            const form = document.getElementById('credentials-form');
+            const status = document.getElementById('status');
+            const testBtn = document.getElementById('test-btn');
+            const saveBtn = document.getElementById('save-btn');
+
+            console.log('Elements found:', { form, status, testBtn, saveBtn });
+
+            // Load existing credentials
+            loadCredentials();
+
+            // Handle form submission
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('Form submitted');
+                    saveCredentials();
+                });
+            }
+
+            // Handle test button
+            if (testBtn) {
+                testBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Test button clicked');
+                    testCredentials();
+                });
+            } else {
+                console.error('Test button not found!');
+            }
+
+            // Also add click handler to save button as backup
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Save button clicked');
+                    saveCredentials();
+                });
+            }
+
+            function loadCredentials() {
+                chrome.storage.local.get(['awsCredentials'], function(result) {
+                    if (result.awsCredentials) {
+                        document.getElementById('access-key-id').value = result.awsCredentials.accessKeyId || '';
+                        document.getElementById('secret-access-key').value = result.awsCredentials.secretAccessKey || '';
+                        document.getElementById('region').value = result.awsCredentials.region || 'us-east-1';
+                    }
+                });
+            }
+
+            function saveCredentials() {
+                console.log('saveCredentials called');
+
+                const credentials = {
+                    accessKeyId: document.getElementById('access-key-id').value.trim(),
+                    secretAccessKey: document.getElementById('secret-access-key').value.trim(),
+                    region: document.getElementById('region').value
+                };
+
+                console.log('Credentials to save:', {
+                    accessKeyId: credentials.accessKeyId ? credentials.accessKeyId.substring(0, 8) + '...' : 'empty',
+                    secretAccessKey: credentials.secretAccessKey ? '***' + credentials.secretAccessKey.substring(credentials.secretAccessKey.length - 4) : 'empty',
+                    region: credentials.region
+                });
+
+                if (!credentials.accessKeyId || !credentials.secretAccessKey) {
+                    showStatus('Please fill in all required fields', 'error');
+                    return;
+                }
+
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
+
+                console.log('Sending message to background script...');
+
+                chrome.runtime.sendMessage({
+                    action: 'configureCredentials',
+                    credentials: credentials
+                }, function(response) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Save & Test';
+
+                    if (response && response.success) {
+                        showStatus('✅ AWS credentials saved and validated successfully!', 'success');
+                        // Keep the form values after successful save
+                        // Don't clear the form
+                    } else {
+                        const errorMsg = response.error || 'Failed to save credentials';
+                        showStatus('❌ Error: ' + errorMsg, 'error');
+                        console.error('Credential save error:', response);
+                        // Keep the form values even on error so user can retry
+                    }
+                });
+            }
+
+            function testCredentials() {
+                console.log('testCredentials called');
+
+                const credentials = {
+                    accessKeyId: document.getElementById('access-key-id').value.trim(),
+                    secretAccessKey: document.getElementById('secret-access-key').value.trim(),
+                    region: document.getElementById('region').value
+                };
+
+                console.log('Credentials to test:', {
+                    accessKeyId: credentials.accessKeyId ? credentials.accessKeyId.substring(0, 8) + '...' : 'empty',
+                    secretAccessKey: credentials.secretAccessKey ? '***' + credentials.secretAccessKey.substring(credentials.secretAccessKey.length - 4) : 'empty',
+                    region: credentials.region
+                });
+
+                if (!credentials.accessKeyId || !credentials.secretAccessKey) {
+                    showStatus('Please fill in all required fields first', 'error');
+                    return;
+                }
+
+                testBtn.disabled = true;
+                testBtn.textContent = 'Testing...';
+
+                console.log('Sending test message to background script...');
+
+                chrome.runtime.sendMessage({
+                    action: 'configureCredentials',
+                    credentials: credentials
+                }, function(response) {
+                    testBtn.disabled = false;
+                    testBtn.textContent = 'Test Connection';
+
+                    if (response && response.success) {
+                        showStatus('✅ Connection successful! Your credentials are valid.', 'success');
+                    } else {
+                        const errorMsg = response.error || 'Invalid credentials';
+                        showStatus('❌ Connection failed: ' + errorMsg, 'error');
+                        console.error('Connection test error:', response);
+                    }
+                });
+            }
+
+            function showStatus(message, type) {
+                status.textContent = message;
+                status.className = 'status ' + type;
+                status.style.display = 'block';
+
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>

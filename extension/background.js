@@ -17,6 +17,9 @@ let explainModeState = {
   bedrockClient: null
 };
 
+// Initialize Bedrock client
+let bedrockClient = null;
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Background received message:', request);
@@ -61,6 +64,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     case 'explainElement':
       handleExplainElement(request.elementData, sendResponse);
       return true;
+
+    case 'configureCredentials':
+      handleConfigureCredentials(request.credentials, sendResponse);
+      break;
 
     default:
       sendResponse({ success: false, error: 'Unknown action' });
@@ -586,13 +593,21 @@ function handleStartExplainMode(sendResponse) {
 }
 
 // Handle element explanation request
-function handleExplainElement(elementData, sendResponse) {
+async function handleExplainElement(elementData, sendResponse) {
   console.log('Handling element explanation request:', elementData);
 
   try {
-    // For now, we'll use a simple mock response
-    // In a real implementation, this would call the AWS Bedrock API
-    const explanation = generateMockExplanation(elementData);
+    // Initialize Bedrock client if not already done
+    if (!bedrockClient) {
+      bedrockClient = new AWSBedrockClient();
+      const initialized = await bedrockClient.initialize();
+      if (!initialized) {
+        throw new Error('Failed to initialize AWS Bedrock client. Please configure your AWS credentials.');
+      }
+    }
+
+    // Get AI explanation from Bedrock
+    const explanation = await bedrockClient.explainElement(elementData);
 
     // Send explanation back to content script
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
@@ -608,7 +623,23 @@ function handleExplainElement(elementData, sendResponse) {
     sendResponse({ success: true, explanation: explanation });
   } catch (error) {
     console.error('Error explaining element:', error);
-    sendResponse({ success: false, error: error.message });
+
+    // Fallback to mock explanation if Bedrock fails
+    const fallbackExplanation = generateMockExplanation(elementData);
+
+    // Send fallback explanation to content script
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'showElementExplanation',
+          explanation: fallbackExplanation,
+          elementData: elementData,
+          isFallback: true
+        });
+      }
+    });
+
+    sendResponse({ success: true, explanation: fallbackExplanation, isFallback: true, error: error.message });
   }
 }
 
@@ -726,6 +757,44 @@ This is an element in the AWS Console interface.
 • Managing resources and settings
 • Navigating the AWS Console
 • Accessing help and support`;
+  }
+}
+
+// Handle AWS credentials configuration
+async function handleConfigureCredentials(credentials, sendResponse) {
+  console.log('Configuring AWS credentials');
+
+  try {
+    if (!bedrockClient) {
+      bedrockClient = new AWSBedrockClient();
+    }
+
+    // Set credentials in the client
+    await bedrockClient.setCredentials(credentials);
+
+    // Set credentials directly in the client instance
+    bedrockClient.credentials = credentials;
+    bedrockClient.region = credentials.region || 'us-east-1';
+
+    // Test the credentials by making a simple API call
+    try {
+      // Create a simple test prompt
+      const testPrompt = "Test connection";
+      const testResponse = await bedrockClient.callBedrockAPI(testPrompt);
+
+      if (testResponse) {
+        bedrockClient.isInitialized = true;
+        sendResponse({ success: true, message: 'AWS credentials configured successfully' });
+      } else {
+        sendResponse({ success: false, error: 'Failed to validate AWS credentials - no response from Bedrock' });
+      }
+    } catch (apiError) {
+      console.error('Bedrock API test failed:', apiError);
+      sendResponse({ success: false, error: `Bedrock API error: ${apiError.message}` });
+    }
+  } catch (error) {
+    console.error('Error configuring credentials:', error);
+    sendResponse({ success: false, error: error.message });
   }
 }
 

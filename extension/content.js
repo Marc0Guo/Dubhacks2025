@@ -46,7 +46,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       break;
 
     case 'showElementExplanation':
-      showElementExplanation(request.explanation, request.elementData);
+      showElementExplanation(request.explanation, request.elementData, request.isFallback);
       sendResponse({ success: true });
       break;
 
@@ -1463,8 +1463,8 @@ function hideLoadingIndicator() {
 }
 
 // Show element explanation
-function showElementExplanation(explanation, elementData) {
-  console.log('Showing element explanation:', explanation);
+function showElementExplanation(explanation, elementData, isFallback = false) {
+  console.log('Showing element explanation:', explanation, 'isFallback:', isFallback);
 
   // Hide loading indicator
   hideLoadingIndicator();
@@ -1484,7 +1484,7 @@ function showElementExplanation(explanation, elementData) {
     left: 50%;
     transform: translate(-50%, -50%);
     background: white;
-    border: 2px solid #4f46e5;
+    border: 2px solid ${isFallback ? '#f59e0b' : '#4f46e5'};
     border-radius: 12px;
     padding: 24px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -1497,14 +1497,20 @@ function showElementExplanation(explanation, elementData) {
     line-height: 1.5;
   `;
 
+  const headerColor = isFallback ? '#f59e0b' : '#4f46e5';
+  const headerText = isFallback ? 'Element Explanation (Fallback)' : 'Element Explanation';
+  const fallbackNotice = isFallback ? '<div style="background: #fef3c7; color: #92400e; padding: 8px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 12px;">⚠️ Using fallback explanation. Configure AWS credentials for AI-powered explanations.</div>' : '';
+
   panel.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-      <h3 style="margin: 0; color: #4f46e5; font-size: 18px;">Element Explanation</h3>
+      <h3 style="margin: 0; color: ${headerColor}; font-size: 18px;">${headerText}</h3>
       <button id="aws-navigator-close-explanation" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
     </div>
+    ${fallbackNotice}
     <div style="color: #374151; white-space: pre-line;">${explanation}</div>
     <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-      <button id="aws-navigator-close-explanation-btn" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">Close</button>
+      <button id="aws-navigator-close-explanation-btn" style="background: ${headerColor}; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">Close</button>
+      ${isFallback ? '<a href="settings.html" target="_blank" style="margin-left: 12px; color: #4f46e5; text-decoration: none; font-weight: 500;">Configure AWS →</a>' : ''}
     </div>
   `;
 

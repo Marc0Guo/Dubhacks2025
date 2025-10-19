@@ -64,11 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Handle settings button
-  settingsButton.addEventListener('click', function() {
-    // TODO: Open settings page or modal
-    console.log('Settings clicked');
-  });
+  // Settings button is now a link, no click handler needed
 
   // Handle help button
   helpButton.addEventListener('click', function() {
