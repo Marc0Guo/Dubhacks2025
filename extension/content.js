@@ -1269,20 +1269,18 @@ function handleElementClick(event) {
     return;
   }
 
-  // Prevent default action temporarily
-  event.preventDefault();
-  event.stopPropagation();
-
   const element = event.target;
 
   // Skip certain elements
   if (shouldSkipElement(element)) {
-    // Allow the click to proceed normally
-    element.click();
-    return;
+    return; // Let the click proceed normally
   }
 
   console.log('Element clicked for explanation:', element);
+
+  // Prevent default action only for explanation
+  event.preventDefault();
+  event.stopPropagation();
 
   // Collect element data and context
   const elementData = collectElementData(element);
@@ -1307,7 +1305,7 @@ function handleElementClick(event) {
 
 function shouldSkipElement(element) {
   // Skip if element is part of our extension UI
-  if (element.closest('#aws-navigator-panel, #aws-navigator-general-panel, #aws-navigator-completion-panel, #explain-mode-indicator, #explain-result-panel')) {
+  if (element.closest('#aws-navigator-panel, #aws-navigator-general-panel, #aws-navigator-completion-panel, #explain-mode-indicator, #explain-result-panel, #explain-loading, #explain-error-panel')) {
     return true;
   }
 
@@ -1317,13 +1315,27 @@ function shouldSkipElement(element) {
     return true;
   }
 
-  // Skip elements with no meaningful content
+  // Skip elements with no meaningful content (but allow input fields)
   if (!element.textContent || element.textContent.trim().length === 0) {
-    return true;
+    // Allow input fields even if they don't have text content
+    if (element.tagName !== 'INPUT' && element.tagName !== 'TEXTAREA' && element.tagName !== 'SELECT') {
+      return true;
+    }
   }
 
   // Skip script and style elements
-  if (element.tagName === 'SCRIPT' || element.tagName === 'STYLE') {
+  if (element.tagName === 'SCRIPT' || element.tagName === 'STYLE' || element.tagName === 'META') {
+    return true;
+  }
+
+  // Skip hidden elements
+  const computedStyle = window.getComputedStyle(element);
+  if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
+    return true;
+  }
+
+  // Skip elements that are too large (likely page containers)
+  if (rect.width > window.innerWidth * 0.9 || rect.height > window.innerHeight * 0.9) {
     return true;
   }
 
@@ -1505,20 +1517,38 @@ function showExplanationResult(element, explanation) {
     animation: slideInFromRight 0.3s ease-out;
   `;
 
-  resultPanel.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-      <h3 style="margin: 0; color: #4f46e5; font-size: 16px;">🧠 AI Explanation</h3>
-      <button id="close-explain-result" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #666;">×</button>
-    </div>
-    <div style="color: #374151;">
-      <div style="margin-bottom: 8px;">
-        <strong>What:</strong> ${explanation.what || 'No description available'}
+  // Check if explanation is a simple string (from API) or structured object (from fallback)
+  const isSimpleString = typeof explanation === 'string' || !explanation.why;
+
+  if (isSimpleString) {
+    // Display API explanation as a simple string
+    const explanationText = typeof explanation === 'string' ? explanation : explanation.what || 'No description available';
+    resultPanel.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0; color: #4f46e5; font-size: 16px;">🧠 AI Explanation</h3>
+        <button id="close-explain-result" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #666;">×</button>
       </div>
-      ${explanation.why ? `<div style="margin-bottom: 8px;"><strong>Why:</strong> ${explanation.why}</div>` : ''}
-      ${explanation.how ? `<div style="margin-bottom: 8px;"><strong>How to use:</strong> ${explanation.how}</div>` : ''}
-      ${explanation.pitfalls ? `<div style="margin-bottom: 8px;"><strong>⚠️ Pitfalls:</strong> ${explanation.pitfalls}</div>` : ''}
-    </div>
-  `;
+      <div style="color: #374151; line-height: 1.6;">
+        ${explanationText}
+      </div>
+    `;
+  } else {
+    // Display structured explanation (fallback)
+    resultPanel.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0; color: #4f46e5; font-size: 16px;">🧠 AI Explanation</h3>
+        <button id="close-explain-result" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #666;">×</button>
+      </div>
+      <div style="color: #374151;">
+        <div style="margin-bottom: 8px;">
+          <strong>What:</strong> ${explanation.what || 'No description available'}
+        </div>
+        ${explanation.why ? `<div style="margin-bottom: 8px;"><strong>Why:</strong> ${explanation.why}</div>` : ''}
+        ${explanation.how ? `<div style="margin-bottom: 8px;"><strong>How to use:</strong> ${explanation.how}</div>` : ''}
+        ${explanation.pitfalls ? `<div style="margin-bottom: 8px;"><strong>⚠️ Pitfalls:</strong> ${explanation.pitfalls}</div>` : ''}
+      </div>
+    `;
+  }
 
   document.body.appendChild(resultPanel);
 

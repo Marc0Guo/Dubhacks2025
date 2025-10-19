@@ -623,19 +623,24 @@ async function handleExplainElement(elementData, sendResponse) {
 
   try {
     // First try to use the existing API
+    console.log('Trying API explanation...');
     const explanation = await getElementExplanationFromAPI(elementData);
 
     if (explanation) {
+      console.log('API explanation successful:', explanation);
       sendResponse({ success: true, explanation: explanation });
       return;
     }
 
+    console.log('API explanation failed, trying Bedrock...');
     // Fallback to Bedrock integration
     const bedrockExplanation = await getElementExplanationFromBedrock(elementData);
 
     if (bedrockExplanation) {
+      console.log('Bedrock explanation successful:', bedrockExplanation);
       sendResponse({ success: true, explanation: bedrockExplanation });
     } else {
+      console.log('All explanations failed, using mock...');
       // Generate mock explanation as final fallback
       const mockExplanation = generateMockExplanation(elementData);
       sendResponse({ success: true, explanation: mockExplanation });
@@ -673,17 +678,14 @@ async function getElementExplanationFromAPI(elementData) {
 
     if (response.ok) {
       const data = await response.json();
+      console.log('API response:', data);
+
       if (data.success && data.explanation) {
         // Parse the explanation from Bedrock Agent
         const explanation = data.explanation;
 
-        // Convert the Chinese explanation to structured format
-        return {
-          what: explanation,
-          why: '这个元素是AWS控制台界面的重要组成部分，帮助您管理和配置云服务。',
-          how: '点击或与此元素交互来执行相应的操作。',
-          pitfalls: '请注意，某些操作可能会产生费用或不可逆的更改，请仔细确认后再执行。'
-        };
+        // Return the AI explanation directly from Bedrock Agent
+        return explanation;
       }
     }
 
@@ -696,35 +698,35 @@ async function getElementExplanationFromAPI(elementData) {
 
 async function getElementExplanationFromBedrock(elementData) {
   try {
-    // Use the Bedrock Agent API for enhanced AI explanations
-    const response = await fetch('http://localhost:5000/agent', {
+    // Use the Bedrock Agent explain-element API for enhanced AI explanations
+    const response = await fetch('http://localhost:5000/explain-element', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: `请详细解释这个AWS控制台元素：${JSON.stringify({
+        element: {
           tagName: elementData.tagName,
           id: elementData.id,
           className: elementData.className,
           textContent: elementData.textContent,
           attributes: elementData.attributes,
+          parentContext: elementData.parentContext,
+          siblingContext: elementData.siblingContext,
           url: elementData.url
-        })}`
+        }
       }),
       timeout: 15000
     });
 
     if (response.ok) {
       const data = await response.json();
-      if (data.reply) {
-        // Parse the AI explanation from Bedrock Agent
-        const explanation = data.reply;
+      console.log('Bedrock API response:', data);
 
-        return {
-          what: explanation,
-          why: '这个元素是AWS控制台界面的重要组成部分，帮助您管理和配置云服务。',
-          how: '点击或与此元素交互来执行相应的操作。',
-          pitfalls: '请注意，某些操作可能会产生费用或不可逆的更改，请仔细确认后再执行。'
-        };
+      if (data.success && data.explanation) {
+        // Parse the AI explanation from Bedrock Agent
+        const explanation = data.explanation;
+
+        // Return the AI explanation directly from Bedrock Agent
+        return explanation;
       }
     }
 
