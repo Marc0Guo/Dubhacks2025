@@ -12,19 +12,19 @@
       <h1>AWS Console Navigator</h1>
       <p class="subtitle">Your intelligent AWS guide</p>
     </header>
-    
+
     <main class="main">
       <div class="input-section">
         <label for="goal-input" class="input-label">What would you like to build?</label>
-        <textarea 
-          id="goal-input" 
-          class="goal-input" 
+        <textarea
+          id="goal-input"
+          class="goal-input"
           placeholder="Describe your goal in plain English...&#10;&#10;Examples:&#10;• I want to deploy a web application&#10;• Set up a database for my app&#10;• Create a serverless API"
           rows="4"
         ></textarea>
         <button id="start-guide" class="start-button" disabled>Start Guide</button>
       </div>
-      
+
       <div class="quick-goals">
         <h3>Quick Start</h3>
         <div class="goal-buttons">
@@ -35,20 +35,21 @@
           <button class="quick-goal-btn" data-goal="host-static-site">Host Static Site</button>
         </div>
       </div>
-      
+
       <div class="status-section" id="status-section" style="display: none;">
         <div class="status-indicator">
           <span class="status-text">Ready to guide you!</span>
         </div>
       </div>
     </main>
-    
+
     <footer class="footer">
+      <button id="element-picker-btn" class="element-picker-button">Element Picker</button>
       <button id="settings-btn" class="settings-button">Settings</button>
       <button id="help-btn" class="help-button">Help</button>
     </footer>
   </div>
-  
+
   <script src="popup.js"></script>
 </body>
 </html>

@@ -9,9 +9,17 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://console.aws.amazon.com/*",
-    "https://*.console.aws.amazon.com/*"
+    "<all_urls>"
   ],
+  "commands": {
+    "toggle-element-picker": {
+      "suggested_key": {
+        "default": "Ctrl+E",
+        "mac": "Command+E"
+      },
+      "description": "Toggle element context picker"
+    }
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "AWS Console Navigator",
@@ -28,8 +36,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://console.aws.amazon.com/*",
-        "https://*.console.aws.amazon.com/*"
+        "<all_urls>"
       ],
       "js": ["content.js"],
       "css": ["content.css"],
@@ -40,8 +47,7 @@
     {
       "resources": ["icons/*", "styles/*"],
       "matches": [
-        "https://console.aws.amazon.com/*",
-        "https://*.console.aws.amazon.com/*"
+        "<all_urls>"
       ]
     }
   ],

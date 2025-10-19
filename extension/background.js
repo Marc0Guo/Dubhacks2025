@@ -11,43 +11,88 @@ let workflowState = {
   steps: []
 };
 
+// Listen for keyboard commands
+chrome.commands.onCommand.addListener((command) => {
+  console.log('Command received:', command);
+
+  if (command === 'toggle-element-picker') {
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      if (tabs[0]) {
+        // Check if the tab URL supports content scripts
+        const url = tabs[0].url;
+        if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url.startsWith('moz-extension://')) {
+          console.log('Cannot inject into system pages:', url);
+          return;
+        }
+
+        chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'toggleElementPicker'
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.log('Content script not available, injecting...');
+            // Try to inject the content script
+            chrome.scripting.executeScript({
+              target: { tabId: tabs[0].id },
+              files: ['content.js']
+            }).then(() => {
+              console.log('Content script injected successfully');
+              // Retry sending the message
+              setTimeout(() => {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                  action: 'toggleElementPicker'
+                });
+              }, 100);
+            }).catch((error) => {
+              console.error('Failed to inject content script:', error);
+            });
+          }
+        });
+      }
+    });
+  }
+});
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Background received message:', request);
-  
+
   switch (request.action) {
     case 'startGuidance':
       handleStartGuidance(request.goal, sendResponse);
       return true; // Keep message channel open for async response
-      
+
     case 'getWorkflowState':
       sendResponse(workflowState);
       break;
-      
+
     case 'nextStep':
       handleNextStep(sendResponse);
       return true;
-      
+
     case 'previousStep':
       handlePreviousStep(sendResponse);
       return true;
-      
+
     case 'stopGuidance':
       handleStopGuidance(sendResponse);
       break;
-      
+
     case 'pageChanged':
       handlePageChange(request.url, sendResponse);
       break;
-      
+
     case 'navigateToUrl':
       handleNavigation(request.url, sendResponse);
       return true;
-      
+
     case 'openPopup':
       handleOpenPopup(sendResponse);
       break;
-      
+
+    case 'elementCaptured':
+      handleElementCaptured(request.data, sendResponse);
+      break;
+
     default:
       sendResponse({ success: false, error: 'Unknown action' });
   }
@@ -56,11 +101,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Handle starting guidance
 function handleStartGuidance(goal, sendResponse) {
   console.log('Starting guidance for goal:', goal);
-  
+
   try {
     // Generate workflow steps based on goal
     const workflow = generateWorkflow(goal);
-    
+
     if (workflow && workflow.steps.length > 0) {
       workflowState = {
         isActive: true,
@@ -69,9 +114,9 @@ function handleStartGuidance(goal, sendResponse) {
         goal: goal,
         steps: workflow.steps
       };
-      
+
       currentWorkflow = workflow;
-      
+
       // Send message to content script to start visual guidance
       chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
         if (tabs[0]) {
@@ -79,10 +124,14 @@ function handleStartGuidance(goal, sendResponse) {
             action: 'startVisualGuidance',
             workflow: workflow,
             step: workflow.steps[0]
+          }, (response) => {
+            if (chrome.runtime.lastError) {
+              console.log('Content script not available for visual guidance');
+            }
           });
         }
       });
-      
+
       sendResponse({ success: true, workflow: workflow });
     } else {
       sendResponse({ success: false, error: 'Could not generate workflow for this goal' });
@@ -96,7 +145,7 @@ function handleStartGuidance(goal, sendResponse) {
 // Generate workflow based on goal (basic keyword matching for MVP)
 function generateWorkflow(goal) {
   const goalLower = goal.toLowerCase();
-  
+
   // Static workflows for MVP
   if (goalLower.includes('static') && goalLower.includes('website')) {
     return {
@@ -138,7 +187,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   if (goalLower.includes('web') && goalLower.includes('app')) {
     return {
       name: 'Deploy Web Application',
@@ -171,7 +220,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   // Detailed EC2 Instance Launch Workflow
   if (goalLower.includes('launch') && goalLower.includes('instance')) {
     return {
@@ -279,7 +328,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   if (goalLower.includes('database')) {
     return {
       name: 'Setup Database',
@@ -304,7 +353,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   if (goalLower.includes('api') || goalLower.includes('serverless')) {
     return {
       name: 'Create Serverless API',
@@ -329,7 +378,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   // Default workflow for unrecognized goals
   return {
     name: 'General AWS Guidance',
@@ -355,25 +404,25 @@ function handleNextStep(sendResponse) {
     totalSteps: workflowState.totalSteps,
     stepsLength: workflowState.steps ? workflowState.steps.length : 'undefined'
   });
-  
+
   // Check if workflow state is properly initialized
   if (!workflowState || !workflowState.steps || workflowState.steps.length === 0) {
     console.error('Workflow state not properly initialized');
     sendResponse({ success: false, error: 'Workflow not initialized' });
     return;
   }
-  
+
   if (workflowState.isActive && workflowState.currentStep < workflowState.totalSteps - 1) {
     workflowState.currentStep++;
     console.log('Advancing to step:', workflowState.currentStep + 1, 'of', workflowState.totalSteps);
-    
+
     // Validate step exists
     if (!workflowState.steps[workflowState.currentStep]) {
       console.error('Step not found at index:', workflowState.currentStep);
       sendResponse({ success: false, error: 'Step not found' });
       return;
     }
-    
+
     // Send updated step to content script
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       if (tabs[0]) {
@@ -385,7 +434,7 @@ function handleNextStep(sendResponse) {
           totalSteps: workflowState.totalSteps
         }, (response) => {
           if (chrome.runtime.lastError) {
-            console.error('Error sending updateStep to content script:', chrome.runtime.lastError);
+            console.log('Content script not available for updateStep:', chrome.runtime.lastError.message);
           } else {
             console.log('updateStep sent successfully:', response);
           }
@@ -394,9 +443,9 @@ function handleNextStep(sendResponse) {
         console.error('No active tab found');
       }
     });
-    
-    sendResponse({ 
-      success: true, 
+
+    sendResponse({
+      success: true,
       step: workflowState.steps[workflowState.currentStep],
       stepNumber: workflowState.currentStep + 1,
       totalSteps: workflowState.totalSteps
@@ -405,17 +454,21 @@ function handleNextStep(sendResponse) {
     // Workflow completed
     console.log('Workflow completed!');
     workflowState.isActive = false;
-    
+
     // Send completion message to content script
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       if (tabs[0]) {
         chrome.tabs.sendMessage(tabs[0].id, {
           action: 'workflowCompleted',
           message: 'Congratulations! You have completed the workflow.'
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.log('Content script not available for workflowCompleted:', chrome.runtime.lastError.message);
+          }
         });
       }
     });
-    
+
     sendResponse({ success: true, completed: true, message: 'Workflow completed successfully!' });
   } else {
     console.error('Cannot advance step - workflow not active or invalid state');
@@ -427,7 +480,7 @@ function handleNextStep(sendResponse) {
 function handlePreviousStep(sendResponse) {
   if (workflowState.isActive && workflowState.currentStep > 0) {
     workflowState.currentStep--;
-    
+
     // Send updated step to content script
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       if (tabs[0]) {
@@ -436,10 +489,14 @@ function handlePreviousStep(sendResponse) {
           step: workflowState.steps[workflowState.currentStep],
           stepNumber: workflowState.currentStep + 1,
           totalSteps: workflowState.totalSteps
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.log('Content script not available for previousStep:', chrome.runtime.lastError.message);
+          }
         });
       }
     });
-    
+
     sendResponse({ success: true, step: workflowState.steps[workflowState.currentStep] });
   } else {
     sendResponse({ success: false, error: 'Already at first step' });
@@ -450,16 +507,20 @@ function handlePreviousStep(sendResponse) {
 function handleStopGuidance(sendResponse) {
   workflowState.isActive = false;
   currentWorkflow = null;
-  
+
   // Send message to content script to stop visual guidance
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     if (tabs[0]) {
       chrome.tabs.sendMessage(tabs[0].id, {
         action: 'stopVisualGuidance'
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.log('Content script not available for stopVisualGuidance:', chrome.runtime.lastError.message);
+        }
       });
     }
   });
-  
+
   sendResponse({ success: true });
 }
 
@@ -480,18 +541,18 @@ function loadWorkflowState() {
 // Handle page change detection
 function handlePageChange(url, sendResponse) {
   console.log('Page changed to:', url);
-  
+
   if (workflowState.isActive && currentWorkflow) {
     const currentStepData = workflowState.steps[workflowState.currentStep];
-    
+
     // Check if the page change matches the expected target page for current step
     if (currentStepData && currentStepData.targetPage && url.includes(currentStepData.targetPage)) {
       console.log('Page change matches expected target, advancing to next step');
-      
+
       // Auto-advance to next step
       if (workflowState.currentStep < workflowState.totalSteps - 1) {
         workflowState.currentStep++;
-        
+
         // Send updated step to content script
         chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
           if (tabs[0]) {
@@ -500,10 +561,14 @@ function handlePageChange(url, sendResponse) {
               step: workflowState.steps[workflowState.currentStep],
               stepNumber: workflowState.currentStep + 1,
               totalSteps: workflowState.totalSteps
+            }, (response) => {
+              if (chrome.runtime.lastError) {
+                console.log('Content script not available for page change updateStep:', chrome.runtime.lastError.message);
+              }
             });
           }
         });
-        
+
         sendResponse({ success: true, advanced: true, step: workflowState.steps[workflowState.currentStep] });
       } else {
         sendResponse({ success: true, advanced: false, message: 'Workflow completed' });
@@ -519,7 +584,7 @@ function handlePageChange(url, sendResponse) {
 // Handle navigation to specific URL
 function handleNavigation(url, sendResponse) {
   console.log('Navigating to:', url);
-  
+
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     if (tabs[0]) {
       chrome.tabs.update(tabs[0].id, { url: url }, (updatedTab) => {
@@ -546,6 +611,25 @@ function handleOpenPopup(sendResponse) {
     console.error('Error opening popup:', error);
     sendResponse({ success: false, error: error.message });
   }
+}
+
+// Handle element captured from content script
+function handleElementCaptured(elementData, sendResponse) {
+  console.log('Element captured:', elementData);
+
+  // Store the captured element data
+  chrome.storage.local.set({
+    lastCapturedElement: elementData,
+    capturedAt: new Date().toISOString()
+  }, () => {
+    if (chrome.runtime.lastError) {
+      console.error('Error saving captured element:', chrome.runtime.lastError);
+      sendResponse({ success: false, error: chrome.runtime.lastError.message });
+    } else {
+      console.log('Element data saved successfully');
+      sendResponse({ success: true });
+    }
+  });
 }
 
 // Initialize
