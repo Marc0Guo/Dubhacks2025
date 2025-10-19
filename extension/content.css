@@ -1,287 +1,62 @@
-/* AWS Tutor Content Script Styles */
-.aws-tutor-sidebar {
-  position: fixed;
-  top: 0;
-  right: -400px;
-  width: 400px;
-  height: 100vh;
-  background: white;
-  border-left: 2px solid #4f46e5;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 10000;
-  transition: right 0.3s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
+/* AWS Console Navigator Content Script Styles */
 
-.aws-tutor-sidebar.open {
-  right: 0;
-}
-
-.aws-tutor-header {
-  padding: 20px;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: white;
-}
-
-.aws-tutor-header h3 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.aws-tutor-close {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: white;
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
-
-.aws-tutor-close:hover {
-  opacity: 1;
-}
-
-.aws-tutor-content {
-  padding: 20px;
-  height: calc(100vh - 120px);
-  overflow-y: auto;
-}
-
-.aws-tutor-footer {
-  padding: 20px;
-  border-top: 1px solid #e5e7eb;
-  background: #f8fafc;
-}
-
-.aws-tutor-toggle {
-  width: 100%;
-  padding: 12px;
-  background: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: background-color 0.2s;
-}
-
-.aws-tutor-toggle:hover {
-  background: #3730a3;
-}
-
-.aws-tutor-mode {
-  font-weight: 600;
-  color: #4f46e5;
-  margin-bottom: 10px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.aws-tutor-checklist {
-  margin: 20px 0;
-}
-
-.aws-tutor-step {
-  display: flex;
-  margin-bottom: 15px;
-  padding: 15px;
-  background: #f9fafb;
-  border-radius: 8px;
-  border-left: 4px solid #4f46e5;
-  transition: all 0.2s;
-}
-
-.aws-tutor-step:hover {
-  background: #f3f4f6;
-  transform: translateX(2px);
-}
-
-.step-number {
-  background: #4f46e5;
-  color: white;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  margin-right: 15px;
-  flex-shrink: 0;
-}
-
-.step-content {
-  flex: 1;
-}
-
-.step-ui {
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #374151;
-  font-size: 15px;
-}
-
-.step-why {
-  font-size: 14px;
-  color: #6b7280;
-  line-height: 1.5;
-}
-
-.aws-tutor-notes {
-  margin-top: 20px;
-  padding: 15px;
-  background: #fef3c7;
-  border: 1px solid #f59e0b;
-  border-radius: 8px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.aws-tutor-error-diagnosis {
-  margin: 20px 0;
-}
-
-.error-cause,
-.error-solution,
-.error-prevention {
-  margin-bottom: 15px;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.error-cause {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-}
-
-.error-solution {
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  color: #0369a1;
-}
-
-.error-prevention {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #166534;
-}
-
-.aws-tutor-tooltip {
-  position: absolute;
-  background: white;
-  border: 2px solid #4f46e5;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  z-index: 10001;
-  max-width: 320px;
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.tooltip-title {
-  font-weight: 600;
-  color: #4f46e5;
-  margin-bottom: 10px;
-  font-size: 16px;
-}
-
-.tooltip-text {
-  color: #374151;
-}
-
-.explanation-what,
-.explanation-why,
-.explanation-pitfalls {
-  margin-bottom: 8px;
-  padding: 6px 0;
-}
-
-.explanation-what strong,
-.explanation-why strong,
-.explanation-pitfalls strong {
-  color: #4f46e5;
-  font-weight: 600;
-}
-
-.aws-tutor-status {
-  padding: 12px 16px;
-  background: #d1fae5;
-  color: #065f46;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  margin-top: 15px;
-  text-align: center;
-  border: 1px solid #a7f3d0;
+/* Ensure our overlay is always on top */
+#aws-navigator-overlay {
+  z-index: 999999 !important;
 }
 
 /* Visual cue styles */
-.aws-tutor-cue {
-  position: absolute;
-  border: 3px solid #4f46e5;
-  border-radius: 8px;
-  background: rgba(79, 70, 229, 0.1);
-  pointer-events: none;
-  animation: pulse 2s infinite;
-  z-index: 10000;
+#aws-navigator-cue {
+  z-index: 1000000 !important;
+  pointer-events: none !important;
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+/* Guidance panel styles */
+#aws-navigator-panel,
+#aws-navigator-general-panel {
+  z-index: 1000001 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* Ensure buttons are clickable */
+#aws-navigator-panel button,
+#aws-navigator-general-panel button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Pulse animation for visual cues */
+@keyframes aws-navigator-pulse {
+  0% { 
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); 
+    transform: scale(1);
   }
-  70% {
-    box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+  50% { 
+    box-shadow: 0 0 0 10px rgba(255, 68, 68, 0.3); 
+    transform: scale(1.02);
   }
-  100% {
-    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+  100% { 
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); 
+    transform: scale(1);
   }
 }
 
-/* Responsive design */
+/* Apply pulse animation to cues */
+#aws-navigator-cue {
+  animation: aws-navigator-pulse 2s infinite !important;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .aws-tutor-sidebar {
-    width: 100vw;
-    right: -100vw;
+  #aws-navigator-panel,
+  #aws-navigator-general-panel {
+    max-width: 250px !important;
+    font-size: 12px !important;
   }
-
-  .aws-tutor-tooltip {
-    max-width: 280px;
-  }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .aws-tutor-sidebar {
-    background: #1f2937;
-    color: #f9fafb;
-  }
-
-  .aws-tutor-content {
-    background: #1f2937;
-  }
-
-  .aws-tutor-step {
-    background: #374151;
-    color: #f9fafb;
-  }
-
-  .aws-tutor-tooltip {
-    background: #1f2937;
-    color: #f9fafb;
-    border-color: #6366f1;
+  
+  #aws-navigator-panel button,
+  #aws-navigator-general-panel button {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
   }
 }

@@ -1,163 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AWS Tutor - AI Console Assistant</title>
-    <link rel="stylesheet" href="styles/popup.css" />
-  </head>
-  <body>
-    <div class="container">
-      <header class="header">
-        <h1>AWS Tutor</h1>
-        <p class="subtitle">AI-powered AWS Console assistant</p>
-      </header>
-
-      <main class="main">
-        <!-- Mode Selection -->
-        <div class="mode-selection">
-          <h3>Choose Mode</h3>
-          <div class="mode-buttons">
-            <button class="mode-btn active" data-mode="explain">
-              🧠 Explain Mode
-            </button>
-            <button class="mode-btn" data-mode="do">🎯 Do Mode</button>
-            <button class="mode-btn" data-mode="error">
-              🔧 Error Whisperer
-            </button>
-          </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS Console Navigator</title>
+  <link rel="stylesheet" href="styles/popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>AWS Console Navigator</h1>
+      <p class="subtitle">Your intelligent AWS guide</p>
+    </header>
+    
+    <main class="main">
+      <div class="input-section">
+        <label for="goal-input" class="input-label">What would you like to build?</label>
+        <textarea 
+          id="goal-input" 
+          class="goal-input" 
+          placeholder="Describe your goal in plain English...&#10;&#10;Examples:&#10;• I want to deploy a web application&#10;• Set up a database for my app&#10;• Create a serverless API"
+          rows="4"
+        ></textarea>
+        <button id="start-guide" class="start-button" disabled>Start Guide</button>
+      </div>
+      
+      <div class="quick-goals">
+        <h3>Quick Start</h3>
+        <div class="goal-buttons">
+          <button class="quick-goal-btn" data-goal="launch-instance">Launch EC2 Instance</button>
+          <button class="quick-goal-btn" data-goal="deploy-web-app">Deploy Web App</button>
+          <button class="quick-goal-btn" data-goal="setup-database">Setup Database</button>
+          <button class="quick-goal-btn" data-goal="create-api">Create API</button>
+          <button class="quick-goal-btn" data-goal="host-static-site">Host Static Site</button>
         </div>
-
-        <!-- Explain Mode -->
-        <div class="mode-content" id="explain-mode">
-          <div class="input-section">
-            <label for="goal-input" class="input-label"
-              >What would you like to understand?</label
-            >
-            <textarea
-              id="goal-input"
-              class="goal-input"
-              placeholder="Describe what you want to learn about...&#10;&#10;Examples:&#10;• What does temperature do in Bedrock?&#10;• How do I set up an EC2 instance?&#10;• What are IAM roles?"
-              rows="4"
-            ></textarea>
-            <button id="start-explain" class="start-button" disabled>
-              Start Learning
-            </button>
-          </div>
-
-          <div class="quick-goals">
-            <h3>Quick Learn</h3>
-            <div class="goal-buttons">
-              <button class="quick-goal-btn" data-goal="bedrock-temperature">
-                Bedrock Temperature
-              </button>
-              <button class="quick-goal-btn" data-goal="bedrock-models">
-                Bedrock Models
-              </button>
-              <button class="quick-goal-btn" data-goal="ec2-basics">
-                EC2 Basics
-              </button>
-              <button class="quick-goal-btn" data-goal="s3-basics">
-                S3 Basics
-              </button>
-              <button class="quick-goal-btn" data-goal="iam-roles">
-                IAM Roles
-              </button>
-            </div>
-          </div>
+      </div>
+      
+      <div class="status-section" id="status-section" style="display: none;">
+        <div class="status-indicator">
+          <span class="status-text">Ready to guide you!</span>
         </div>
-
-        <!-- Do Mode -->
-        <div class="mode-content" id="do-mode" style="display: none">
-          <div class="input-section">
-            <label for="task-input" class="input-label"
-              >What would you like to build?</label
-            >
-            <textarea
-              id="task-input"
-              class="goal-input"
-              placeholder="Describe your goal in plain English...&#10;&#10;Examples:&#10;• Create an AI chatbot with Bedrock&#10;• Deploy a web application&#10;• Set up a database for my app"
-              rows="4"
-            ></textarea>
-            <button id="start-do" class="start-button" disabled>
-              Start Building
-            </button>
-          </div>
-
-          <div class="quick-goals">
-            <h3>Quick Start</h3>
-            <div class="goal-buttons">
-              <button class="quick-goal-btn" data-goal="bedrock-chatbot">
-                Create AI Chatbot
-              </button>
-              <button class="quick-goal-btn" data-goal="deploy-web-app">
-                Deploy Web App
-              </button>
-              <button class="quick-goal-btn" data-goal="setup-database">
-                Setup Database
-              </button>
-              <button class="quick-goal-btn" data-goal="create-api">
-                Create API
-              </button>
-              <button class="quick-goal-btn" data-goal="host-static-site">
-                Host Static Site
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Error Whisperer Mode -->
-        <div class="mode-content" id="error-mode" style="display: none">
-          <div class="input-section">
-            <label for="error-input" class="input-label"
-              >What error are you seeing?</label
-            >
-            <textarea
-              id="error-input"
-              class="goal-input"
-              placeholder="Paste your error message here...&#10;&#10;Examples:&#10;• AccessDenied: User is not authorized&#10;• ValidationException: Invalid parameter&#10;• ThrottlingException: Rate exceeded"
-              rows="4"
-            ></textarea>
-            <button id="start-error-help" class="start-button" disabled>
-              Get Help
-            </button>
-          </div>
-
-          <div class="quick-goals">
-            <h3>Common Errors</h3>
-            <div class="goal-buttons">
-              <button class="quick-goal-btn" data-goal="access-denied">
-                Access Denied
-              </button>
-              <button class="quick-goal-btn" data-goal="validation-error">
-                Validation Error
-              </button>
-              <button class="quick-goal-btn" data-goal="throttling">
-                Rate Limiting
-              </button>
-              <button class="quick-goal-btn" data-goal="permissions">
-                IAM Permissions
-              </button>
-              <button class="quick-goal-btn" data-goal="billing">
-                Billing Issues
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="status-section" id="status-section" style="display: none">
-          <div class="status-indicator">
-            <span class="status-text">Ready to help!</span>
-          </div>
-        </div>
-      </main>
-
-      <footer class="footer">
-        <button id="settings-btn" class="settings-button">Settings</button>
-        <button id="help-btn" class="help-button">Help</button>
-      </footer>
-    </div>
-
-    <script src="popup.js"></script>
-  </body>
+      </div>
+    </main>
+    
+    <footer class="footer">
+      <button id="settings-btn" class="settings-button">Settings</button>
+      <button id="help-btn" class="help-button">Help</button>
+    </footer>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
 </html>

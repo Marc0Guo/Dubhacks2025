@@ -1,19 +1,20 @@
 {
-  "manifest_version": 3,
-  "name": "AWS Tutor - AI Console Assistant",
+  "name": "AWS Console Navigator",
+  "description": "An intelligent assistant to guide users through the AWS Console with visual navigation cues",
   "version": "1.0.0",
-  "description": "AI-powered assistant for AWS Console with visual guidance and intelligent explanations",
-
-  "permissions": ["activeTab", "storage", "scripting"],
-
-  "host_permissions": [
-    "*://console.aws.amazon.com/*",
-    "*://*.console.aws.amazon.com/*"
+  "manifest_version": 3,
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
   ],
-
+  "host_permissions": [
+    "https://console.aws.amazon.com/*",
+    "https://*.console.aws.amazon.com/*"
+  ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "AWS Tutor",
+    "default_title": "AWS Console Navigator",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -21,33 +22,29 @@
       "128": "icons/icon128.png"
     }
   },
-
   "background": {
     "service_worker": "background.js"
   },
-
   "content_scripts": [
     {
       "matches": [
-        "*://console.aws.amazon.com/*",
-        "*://*.console.aws.amazon.com/*"
+        "https://console.aws.amazon.com/*",
+        "https://*.console.aws.amazon.com/*"
       ],
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_end"
     }
   ],
-
   "web_accessible_resources": [
     {
       "resources": ["icons/*", "styles/*"],
       "matches": [
-        "*://console.aws.amazon.com/*",
-        "*://*.console.aws.amazon.com/*"
+        "https://console.aws.amazon.com/*",
+        "https://*.console.aws.amazon.com/*"
       ]
     }
   ],
-
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
