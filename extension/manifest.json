@@ -45,7 +45,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/*", "styles/*"],
+      "resources": ["icons/*", "styles/*", "settings.html", "aws-sdk.min.js"],
       "matches": [
         "<all_urls>"
       ]

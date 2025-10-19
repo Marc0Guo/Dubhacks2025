@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Bedrock Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #ff4444;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #e03e3e;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .response {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .debug-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 AWS Bedrock Connection Test</h1>
+        <p>Test your AWS Bedrock connection with the updated SDK implementation.</p>
+
+        <form id="testForm">
+            <div class="form-group">
+                <label for="accessKey">AWS Access Key ID:</label>
+                <input type="text" id="accessKey" placeholder="AKIA..." required>
+            </div>
+
+            <div class="form-group">
+                <label for="secretKey">AWS Secret Access Key:</label>
+                <input type="password" id="secretKey" placeholder="Your secret key" required>
+            </div>
+
+            <div class="form-group">
+                <label for="region">AWS Region:</label>
+                <select id="region" required>
+                    <option value="us-west-2">US West (Oregon) - us-west-2</option>
+                    <option value="us-east-1">US East (N. Virginia) - us-east-1</option>
+                    <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
+                    <option value="ap-southeast-1">Asia Pacific (Singapore) - ap-southeast-1</option>
+                </select>
+            </div>
+
+            <button type="submit" id="testBtn">Test Bedrock Connection</button>
+            <button type="button" id="clearBtn">Clear Form</button>
+        </form>
+
+        <div id="status" class="status"></div>
+        <div id="response" class="response" style="display: none;"></div>
+        <div id="debugInfo" class="debug-info" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Load AWS SDK
+        const script = document.createElement('script');
+        script.src = 'aws-sdk.min.js';
+        script.onload = function() {
+            console.log('✅ AWS SDK loaded successfully');
+            showDebugInfo('AWS SDK loaded successfully');
+            initializeTest();
+        };
+        script.onerror = function() {
+            showStatus('❌ Failed to load AWS SDK', 'error');
+            showDebugInfo('Failed to load AWS SDK from aws-sdk.min.js');
+        };
+        document.head.appendChild(script);
+
+        function initializeTest() {
+            const form = document.getElementById('testForm');
+            const testBtn = document.getElementById('testBtn');
+            const clearBtn = document.getElementById('clearBtn');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await testBedrockConnection();
+            });
+
+            clearBtn.addEventListener('click', () => {
+                form.reset();
+                hideStatus();
+                hideResponse();
+                hideDebugInfo();
+            });
+        }
+
+        async function testBedrockConnection() {
+            const accessKey = document.getElementById('accessKey').value.trim();
+            const secretKey = document.getElementById('secretKey').value.trim();
+            const region = document.getElementById('region').value;
+            const testBtn = document.getElementById('testBtn');
+
+            if (!accessKey || !secretKey) {
+                showStatus('Please fill in all required fields', 'error');
+                return;
+            }
+
+            // Validate access key format
+            if (!accessKey.startsWith('AKIA') || accessKey.length !== 20) {
+                showStatus('Invalid AWS Access Key format. Should start with AKIA and be 20 characters long.', 'error');
+                return;
+            }
+
+            // Validate secret key format
+            if (secretKey.length < 40) {
+                showStatus('Invalid AWS Secret Key format. Should be at least 40 characters long.', 'error');
+                return;
+            }
+
+            testBtn.disabled = true;
+            testBtn.textContent = 'Testing...';
+            showStatus('Testing Bedrock connection...', 'info');
+            showDebugInfo(`Testing with region: ${region}, Access Key: ${accessKey.substring(0, 8)}...`);
+
+            try {
+                showDebugInfo('AWS SDK loaded, creating BedrockRuntime client...');
+
+                // Create BedrockRuntime client
+                const bedrock = new AWS.BedrockRuntime({
+                    region: region,
+                    accessKeyId: accessKey,
+                    secretAccessKey: secretKey
+                });
+                showDebugInfo('BedrockRuntime client created');
+
+                const params = {
+                    modelId: 'amazon.titan-text-lite-v1',
+                    contentType: 'application/json',
+                    accept: 'application/json',
+                    body: JSON.stringify({
+                        inputText: "Hello! Please respond with a simple greeting to confirm AWS Bedrock is working correctly.",
+                        textGenerationConfig: {
+                            maxTokenCount: 100,
+                            temperature: 0.1,
+                            topP: 0.9
+                        }
+                    })
+                };
+
+                showDebugInfo('Calling Bedrock API...');
+                console.log('Calling Bedrock API with params:', params);
+
+                const result = await bedrock.invokeModel(params).promise();
+                console.log('Bedrock API response:', result);
+                showDebugInfo('Bedrock API call successful!');
+
+                const responseData = JSON.parse(result.body.toString());
+
+                if (responseData.results && responseData.results[0] && responseData.results[0].outputText) {
+                    showStatus('✅ Bedrock connection successful!', 'success');
+                    showResponse(JSON.stringify(responseData, null, 2));
+                    showDebugInfo('Response parsed successfully');
+                } else {
+                    throw new Error('Invalid response format from Bedrock');
+                }
+
+            } catch (error) {
+                console.error('Bedrock connection test failed:', error);
+                showStatus('❌ Bedrock connection failed: ' + error.message, 'error');
+                showResponse(JSON.stringify({
+                    error: error.message,
+                    code: error.code,
+                    statusCode: error.statusCode,
+                    requestId: error.requestId
+                }, null, 2));
+                showDebugInfo(`Error details: ${error.message}`);
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = 'Test Bedrock Connection';
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function hideStatus() {
+            const status = document.getElementById('status');
+            status.style.display = 'none';
+        }
+
+        function showResponse(data) {
+            const response = document.getElementById('response');
+            response.textContent = data;
+            response.style.display = 'block';
+        }
+
+        function hideResponse() {
+            const response = document.getElementById('response');
+            response.style.display = 'none';
+        }
+
+        function showDebugInfo(message) {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.innerHTML += message + '<br>';
+            debugInfo.style.display = 'block';
+        }
+
+        function hideDebugInfo() {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.innerHTML = '';
+            debugInfo.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

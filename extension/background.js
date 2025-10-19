@@ -1,6 +1,37 @@
 // AWS Console Navigator Background Service Worker
 console.log('AWS Console Navigator background script loaded');
 
+// Load AWS SDK
+try {
+  importScripts('aws-sdk.min.js');
+  console.log('✅ AWS SDK loaded successfully');
+
+  if (typeof AWS !== 'undefined') {
+    console.log('✅ AWS object is available');
+    console.log('AWS version:', AWS.VERSION);
+
+    // Test if BedrockRuntime is available
+    if (AWS.BedrockRuntime) {
+      console.log('✅ BedrockRuntime service is available');
+    } else {
+      console.log('❌ BedrockRuntime service not available');
+      console.log('Available services:', Object.keys(AWS).filter(key => key.includes('Bedrock')));
+    }
+  } else {
+    console.log('❌ AWS object not available');
+  }
+} catch (error) {
+  console.error('❌ Failed to load AWS SDK:', error);
+}
+
+// AWS Bedrock Configuration
+const BEDROCK_CONFIG = {
+  region: 'us-west-2', // Default region (Oregon), can be configured
+  modelId: 'amazon.titan-text-lite-v1', // Amazon Titan Text Lite
+  maxTokens: 1000,
+  temperature: 0.1
+};
+
 // Store for workflow state
 let currentWorkflow = null;
 let workflowState = {
@@ -91,7 +122,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     case 'elementCaptured':
       handleElementCaptured(request.data, sendResponse);
-      break;
+      return true; // Keep message channel open for async response
+
+    case 'testBedrockConnection':
+      handleTestBedrockConnection(request.credentials, sendResponse);
+      return true;
 
     default:
       sendResponse({ success: false, error: 'Unknown action' });
@@ -627,9 +662,206 @@ function handleElementCaptured(elementData, sendResponse) {
       sendResponse({ success: false, error: chrome.runtime.lastError.message });
     } else {
       console.log('Element data saved successfully');
-      sendResponse({ success: true });
+
+      // Analyze element with AWS Bedrock
+      analyzeElementWithBedrock(elementData)
+        .then(analysis => {
+          console.log('Bedrock analysis completed:', analysis);
+          sendResponse({ success: true, analysis: analysis });
+        })
+        .catch(error => {
+          console.error('Bedrock analysis failed:', error);
+          sendResponse({ success: true, analysis: null, error: error.message });
+        });
     }
   });
+}
+
+// AWS Bedrock Service Functions
+async function analyzeElementWithBedrock(elementData) {
+  try {
+    console.log('Starting Bedrock analysis for element:', elementData.element.tagName);
+
+    // Get AWS credentials from storage (user needs to configure these)
+    const credentials = await getBedrockCredentials();
+    if (!credentials) {
+      throw new Error('AWS credentials not configured. Please set up AWS access key and secret key in extension settings.');
+    }
+
+    // Prepare the prompt for Claude
+    const prompt = createAnalysisPrompt(elementData);
+
+    // Call Bedrock API
+    const response = await callBedrockAPI(prompt, credentials);
+
+    return {
+      success: true,
+      analysis: response,
+      timestamp: new Date().toISOString()
+    };
+
+  } catch (error) {
+    console.error('Bedrock analysis error:', error);
+    return {
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+function createAnalysisPrompt(elementData) {
+  const { page, element, context } = elementData;
+
+  return `You are an expert web developer and UX analyst. Analyze this clicked element from an AWS Console page and provide insights.
+
+PAGE CONTEXT:
+- URL: ${page.url}
+- Title: ${page.title}
+
+ELEMENT DETAILS:
+- Tag: ${element.tagName}
+- Text: ${element.text || 'No text content'}
+- ID: ${element.id || 'No ID'}
+- Classes: ${element.classList.join(', ') || 'No classes'}
+- CSS Path: ${element.cssPath}
+
+CONTEXTUAL INFORMATION:
+- Nearest Heading: ${context.nearestHeading || 'No heading found'}
+- Previous Block: ${context.previousBlock || 'No previous context'}
+- Next Block: ${context.nextBlock || 'No next context'}
+- Ancestor Summary: ${context.ancestorSummary || 'No ancestor context'}
+
+HTML SNIPPET:
+${element.htmlSnippet}
+
+Please provide a structured analysis in JSON format with the following fields:
+1. elementType: What type of UI element this is (button, input, link, etc.)
+2. purpose: What this element is likely used for
+3. awsService: Which AWS service this element belongs to (if any)
+4. action: What action this element performs when clicked
+5. importance: How critical this element is (high/medium/low)
+6. description: A brief description of what this element does
+7. suggestions: Any suggestions for the user about this element
+
+Respond only with valid JSON, no additional text.`;
+}
+
+async function getBedrockCredentials() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['awsAccessKey', 'awsSecretKey', 'awsRegion'], (result) => {
+      if (result.awsAccessKey && result.awsSecretKey) {
+        resolve({
+          accessKeyId: result.awsAccessKey,
+          secretAccessKey: result.awsSecretKey,
+          region: result.awsRegion || BEDROCK_CONFIG.region
+        });
+      } else {
+        resolve(null);
+      }
+    });
+  });
+}
+
+async function callBedrockAPI(prompt, credentials) {
+  try {
+    // Check if AWS SDK is available
+    if (typeof AWS === 'undefined') {
+      throw new Error('AWS SDK not loaded. Please reload the extension.');
+    }
+
+    console.log('AWS SDK is available, checking available services...');
+    console.log('All AWS services:', Object.keys(AWS).filter(key => typeof AWS[key] === 'function'));
+    console.log('Bedrock-related services:', Object.keys(AWS).filter(key => key.toLowerCase().includes('bedrock')));
+
+    // Check if BedrockRuntime is available
+    if (typeof AWS.BedrockRuntime === 'function') {
+      console.log('✅ BedrockRuntime is available as a constructor');
+    } else {
+      console.log('❌ BedrockRuntime is not available as a constructor');
+      console.log('Available Bedrock services:', Object.keys(AWS).filter(key => key.toLowerCase().includes('bedrock')));
+      throw new Error('BedrockRuntime service is not available in this AWS SDK version. Please use a newer version of the AWS SDK.');
+    }
+
+    // Create BedrockRuntime client
+    const bedrock = new AWS.BedrockRuntime({
+      region: credentials.region,
+      accessKeyId: credentials.accessKeyId,
+      secretAccessKey: credentials.secretAccessKey
+    });
+
+    const params = {
+      modelId: BEDROCK_CONFIG.modelId,
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        inputText: prompt,
+        textGenerationConfig: {
+          maxTokenCount: BEDROCK_CONFIG.maxTokens,
+          temperature: BEDROCK_CONFIG.temperature,
+          topP: 0.9
+        }
+      })
+    };
+
+    console.log('Calling Bedrock API with params:', params);
+
+    const response = await bedrock.invokeModel(params).promise();
+    console.log('Bedrock API response:', response);
+
+    const result = JSON.parse(response.body.toString());
+
+    // Extract the content from Amazon Titan's response
+    if (result.results && result.results[0] && result.results[0].outputText) {
+      try {
+        return JSON.parse(result.results[0].outputText);
+      } catch (parseError) {
+        console.warn('Failed to parse Bedrock response as JSON:', parseError);
+        return {
+          elementType: 'unknown',
+          purpose: 'Could not analyze',
+          awsService: 'unknown',
+          action: 'unknown',
+          importance: 'low',
+          description: result.results[0].outputText,
+          suggestions: 'Please check the raw response in console'
+        };
+      }
+    } else {
+      throw new Error('Invalid response format from Bedrock');
+    }
+
+  } catch (error) {
+    console.error('Bedrock API call failed:', error);
+    throw error;
+  }
+}
+
+
+// Handle test Bedrock connection
+async function handleTestBedrockConnection(credentials, sendResponse) {
+  try {
+    console.log('Testing Bedrock connection with credentials:', credentials.accessKeyId);
+
+    // Create a simple test prompt
+    const testPrompt = `You are a helpful assistant. Please respond with a simple "Hello, AWS Bedrock is working!" message.`;
+
+    // Call Bedrock API
+    const response = await callBedrockAPI(testPrompt, credentials);
+
+    sendResponse({
+      success: true,
+      message: 'Bedrock connection successful',
+      response: response
+    });
+
+  } catch (error) {
+    console.error('Bedrock connection test failed:', error);
+    sendResponse({
+      success: false,
+      error: error.message
+    });
+  }
 }
 
 // Initialize

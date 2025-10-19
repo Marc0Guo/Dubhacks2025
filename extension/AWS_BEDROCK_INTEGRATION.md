@@ -1,34 +1,34 @@
-# AWS Bedrock Integration
+# AWS Bedrock Integration Guide
 
-This extension now includes AWS Bedrock integration for AI-powered element analysis.
+## Overview
+
+The AWS Console Navigator extension now includes AWS Bedrock integration that allows you to analyze clicked elements using Claude 3 Sonnet. When you click on any element using the element picker, the extension will send the element's context to AWS Bedrock and display intelligent analysis results.
 
 ## Features
 
-- **Element Context Capture**: Click any element on a webpage to capture its structured context
-- **AI Analysis**: Automatically send element data to AWS Bedrock Claude for intelligent analysis
-- **Real-time Display**: View AI analysis results in a user-friendly panel
-- **Secure Credentials**: Store AWS credentials securely in Chrome storage
+- **Element Analysis**: Get detailed insights about any UI element you click
+- **AWS Service Detection**: Automatically identify which AWS service an element belongs to
+- **Purpose Identification**: Understand what each element does and its importance
+- **Smart Suggestions**: Receive actionable recommendations for using the element
+- **Visual Feedback**: Beautiful analysis panel with color-coded importance levels
 
 ## Setup Instructions
 
 ### 1. Configure AWS Credentials
 
 1. Open the extension popup
-2. Click "AWS Config" button
+2. Click the "Settings" button
 3. Enter your AWS credentials:
-   - **Access Key ID**: Your AWS access key
-   - **Secret Access Key**: Your AWS secret key
-   - **Region**: Select your preferred AWS region (default: us-east-1)
-4. Click "Save Configuration"
+   - **AWS Access Key ID**: Your AWS access key (starts with AKIA)
+   - **AWS Secret Access Key**: Your AWS secret key
+   - **AWS Region**: Select the region where Bedrock is available
+4. Click "Save Settings"
+5. Test the connection using the "Test Bedrock Connection" button
 
-### 2. AWS Bedrock Setup
+### 2. AWS Permissions Required
 
-Make sure you have:
-- AWS Bedrock access enabled in your AWS account
-- Claude 3 Sonnet model access
-- Proper IAM permissions for Bedrock API calls
+Your AWS credentials need the following permissions:
 
-Required IAM permissions:
 ```json
 {
     "Version": "2012-10-17",
@@ -44,82 +44,116 @@ Required IAM permissions:
 }
 ```
 
-## Usage
+### 3. Using the Element Picker
 
-### Element Analysis Workflow
+1. **Activate Element Picker**:
+   - Click the "Element Picker" button in the extension popup, OR
+   - Use keyboard shortcut: `Ctrl+E` (Windows/Linux) or `Cmd+E` (Mac)
 
-1. **Activate Element Picker**: Press `Command+E` (Mac) or `Ctrl+E` (Windows/Linux)
-2. **Click Element**: Click on any element you want to analyze
-3. **View Analysis**: AI analysis will appear in a panel on the page
-4. **Auto-close**: Panel automatically closes after 15 seconds
+2. **Analyze Elements**:
+   - Hover over any element to see it highlighted
+   - Click on any element to capture its context
+   - Wait for AWS Bedrock analysis (usually 2-5 seconds)
+   - View the analysis results in the popup panel
 
-### What Gets Analyzed
+3. **Analysis Results Include**:
+   - **Element Type**: Button, input, link, etc.
+   - **AWS Service**: EC2, S3, Lambda, etc.
+   - **Purpose**: What the element is used for
+   - **Action**: What happens when you click it
+   - **Importance**: High/Medium/Low priority
+   - **Description**: Detailed explanation
+   - **Suggestions**: Tips for using the element
 
-The AI analyzes:
-- **Element Type**: Button, link, input, etc.
-- **Purpose**: What the element does
-- **Context**: Surrounding content and structure
-- **Interactions**: How to interact with the element
+## Analysis Panel Features
 
-## Technical Details
+### Visual Indicators
+- **High Importance**: Red badge - Critical elements
+- **Medium Importance**: Yellow badge - Important elements
+- **Low Importance**: Green badge - Optional elements
 
-### Data Flow
+### Interactive Features
+- **Copy Analysis**: Copy the full analysis to clipboard
+- **Highlight Element**: Scroll to and highlight the analyzed element
+- **Auto-close**: Panel automatically closes after 30 seconds
 
-1. **Element Capture**: Content script captures element context
-2. **Background Processing**: Background script sends data to AWS Bedrock
-3. **AI Analysis**: Claude analyzes the element and returns insights
-4. **Display**: Analysis is shown in a floating panel
+## Example Analysis Output
 
-### Security
-
-- AWS credentials are stored locally in Chrome storage
-- No credentials are transmitted to external servers
-- All API calls are made directly to AWS Bedrock
-
-### API Integration
-
-- **Model**: Claude 3 Sonnet (anthropic.claude-3-sonnet-20240229-v1:0)
-- **Endpoint**: `https://bedrock-runtime.{region}.amazonaws.com/model/{modelId}/invoke`
-- **Authentication**: AWS Signature Version 4
+```json
+{
+  "elementType": "button",
+  "purpose": "Launch a new EC2 instance",
+  "awsService": "EC2",
+  "action": "Opens the EC2 instance launch wizard",
+  "importance": "high",
+  "description": "This button initiates the process of creating a new virtual server in AWS EC2. It's the primary entry point for launching instances.",
+  "suggestions": "Make sure you have selected the correct AMI and instance type before launching. Consider using the free tier eligible options if you're just getting started."
+}
+```
 
 ## Troubleshooting
 
 ### Common Issues
 
 1. **"AWS credentials not configured"**
-   - Solution: Configure credentials in the popup
+   - Go to Settings and enter your AWS credentials
+   - Make sure both Access Key and Secret Key are provided
 
-2. **"Bedrock API error"**
-   - Check your AWS credentials
-   - Verify Bedrock access in your AWS account
-   - Ensure proper IAM permissions
+2. **"Bedrock connection failed"**
+   - Check your AWS credentials are correct
+   - Verify Bedrock is available in your selected region
+   - Ensure your AWS account has Bedrock access enabled
 
-3. **Analysis panel not showing**
-   - Check browser console for errors
-   - Verify element picker is working
-   - Ensure AWS credentials are valid
+3. **"Analysis failed"**
+   - Check your internet connection
+   - Verify AWS permissions include Bedrock access
+   - Try testing the connection in Settings
+
+4. **Element picker not working**
+   - Make sure you're on a regular website (not chrome:// pages)
+   - Refresh the page and try again
+   - Check browser console for error messages
 
 ### Debug Information
 
-- Check browser console for detailed logs
-- Element data is stored in `window.__lastPickedElement`
-- Analysis results are stored in Chrome storage
+- All analysis requests and responses are logged to the browser console
+- Check `window.__lastPickedElement` for the raw element data
+- Use browser dev tools to inspect network requests to Bedrock
 
-## File Changes
+## Security Notes
 
-The following files were modified to add AWS Bedrock integration:
+- **Local Storage**: AWS credentials are stored locally in your browser
+- **No Third-party**: Credentials are never sent to external servers
+- **Direct API**: Extension communicates directly with AWS Bedrock
+- **Temporary**: Analysis data is not permanently stored
 
-- `manifest.json`: Added Bedrock API permissions
-- `background.js`: Added Bedrock API integration and credential management
-- `content.js`: Added analysis display functionality
-- `popup.html`: Added AWS configuration UI
-- `popup.js`: Added credential handling
-- `styles/popup.css`: Added styling for AWS config section
+## Supported AWS Services
 
-## Future Enhancements
+The analysis works best with:
+- EC2 (Elastic Compute Cloud)
+- S3 (Simple Storage Service)
+- Lambda (Serverless Functions)
+- RDS (Relational Database Service)
+- VPC (Virtual Private Cloud)
+- IAM (Identity and Access Management)
+- CloudFormation
+- And many more AWS services
 
-- Support for multiple AI models
-- Custom analysis prompts
-- Batch element analysis
-- Export analysis results
-- Integration with other AWS services
+## Tips for Best Results
+
+1. **Click Specific Elements**: Click on buttons, links, and inputs rather than large containers
+2. **AWS Console Pages**: Analysis works best on official AWS Console pages
+3. **Clear Context**: Elements with clear text and purpose get better analysis
+4. **Wait for Loading**: Let pages fully load before analyzing elements
+
+## Support
+
+If you encounter issues:
+1. Check the browser console for error messages
+2. Verify your AWS credentials and permissions
+3. Test the Bedrock connection in Settings
+4. Try refreshing the page and analyzing again
+
+---
+
+**Note**: This integration requires AWS Bedrock access, which may not be available in all AWS regions or accounts. Check AWS documentation for Bedrock availability in your region.

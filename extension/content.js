@@ -1352,12 +1352,32 @@ async function handleElementPickerClick(e) {
   window.__lastPickedElement = llmData;
 
   console.log("✅ Captured element context (for LLM):", llmData);
-  elementPicker.info.textContent = "Captured. Check console (window.__lastPickedElement). Press ESC to exit or click another element.";
+  elementPicker.info.textContent = "Analyzing with AWS Bedrock...";
 
-  // Send to background script for potential processing
+  // Send to background script for Bedrock analysis
   chrome.runtime.sendMessage({
     action: 'elementCaptured',
     data: llmData
+  }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error('Error sending element data:', chrome.runtime.lastError);
+      elementPicker.info.textContent = "Error: " + chrome.runtime.lastError.message;
+      return;
+    }
+
+    if (response && response.success) {
+      if (response.analysis && response.analysis.success) {
+        console.log("🤖 Bedrock Analysis Result:", response.analysis.analysis);
+        displayBedrockAnalysis(response.analysis.analysis, el);
+        elementPicker.info.textContent = "Analysis complete! Check the analysis panel.";
+      } else {
+        console.warn("Bedrock analysis failed:", response.analysis?.error);
+        elementPicker.info.textContent = "Analysis failed: " + (response.analysis?.error || "Unknown error");
+      }
+    } else {
+      console.error("Failed to process element:", response);
+      elementPicker.info.textContent = "Failed to process element";
+    }
   });
 }
 
@@ -1468,6 +1488,163 @@ function collectElementForLLM(el) {
     }
   };
   return data;
+}
+
+// Display Bedrock analysis results
+function displayBedrockAnalysis(analysis, targetElement) {
+  try {
+    // Remove any existing analysis panel
+    const existingPanel = document.getElementById('bedrock-analysis-panel');
+    if (existingPanel) {
+      existingPanel.remove();
+    }
+
+    // Create analysis panel
+    const panel = document.createElement('div');
+    panel.id = 'bedrock-analysis-panel';
+    panel.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: white;
+      border: 2px solid #007bff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 1000003;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    `;
+
+    // Determine importance color
+    const importanceColors = {
+      high: '#dc3545',
+      medium: '#ffc107',
+      low: '#28a745'
+    };
+    const importanceColor = importanceColors[analysis.importance] || '#6c757d';
+
+    panel.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0; color: #007bff; font-size: 18px;">🤖 AWS Bedrock Analysis</h3>
+        <button id="bedrock-analysis-close" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+          <span style="font-weight: 600; margin-right: 8px;">Element Type:</span>
+          <span style="background: #e9ecef; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${analysis.elementType}</span>
+        </div>
+
+        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+          <span style="font-weight: 600; margin-right: 8px;">AWS Service:</span>
+          <span style="background: #007bff; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${analysis.awsService}</span>
+        </div>
+
+        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+          <span style="font-weight: 600; margin-right: 8px;">Importance:</span>
+          <span style="background: ${importanceColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; text-transform: uppercase;">${analysis.importance}</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <h4 style="margin: 0 0 8px 0; color: #333; font-size: 16px;">Purpose</h4>
+        <p style="margin: 0; color: #666; background: #f8f9fa; padding: 12px; border-radius: 6px;">${analysis.purpose}</p>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <h4 style="margin: 0 0 8px 0; color: #333; font-size: 16px;">Action</h4>
+        <p style="margin: 0; color: #666; background: #f8f9fa; padding: 12px; border-radius: 6px;">${analysis.action}</p>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <h4 style="margin: 0 0 8px 0; color: #333; font-size: 16px;">Description</h4>
+        <p style="margin: 0; color: #666; background: #f8f9fa; padding: 12px; border-radius: 6px;">${analysis.description}</p>
+      </div>
+
+      ${analysis.suggestions ? `
+        <div style="margin-bottom: 16px;">
+          <h4 style="margin: 0 0 8px 0; color: #333; font-size: 16px;">💡 Suggestions</h4>
+          <p style="margin: 0; color: #666; background: #e7f3ff; padding: 12px; border-radius: 6px; border-left: 4px solid #007bff;">${analysis.suggestions}</p>
+        </div>
+      ` : ''}
+
+      <div style="display: flex; gap: 8px; margin-top: 16px;">
+        <button id="bedrock-analysis-copy" style="flex: 1; padding: 8px 12px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Copy Analysis</button>
+        <button id="bedrock-analysis-highlight" style="flex: 1; padding: 8px 12px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Highlight Element</button>
+      </div>
+    `;
+
+    document.body.appendChild(panel);
+
+    // Add event listeners
+    const closeBtn = document.getElementById('bedrock-analysis-close');
+    const copyBtn = document.getElementById('bedrock-analysis-copy');
+    const highlightBtn = document.getElementById('bedrock-analysis-highlight');
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        panel.remove();
+      });
+    }
+
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => {
+        const analysisText = `AWS Bedrock Analysis:
+Element Type: ${analysis.elementType}
+AWS Service: ${analysis.awsService}
+Importance: ${analysis.importance}
+Purpose: ${analysis.purpose}
+Action: ${analysis.action}
+Description: ${analysis.description}
+${analysis.suggestions ? `Suggestions: ${analysis.suggestions}` : ''}`;
+
+        navigator.clipboard.writeText(analysisText).then(() => {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy Analysis';
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy:', err);
+          copyBtn.textContent = 'Copy Failed';
+        });
+      });
+    }
+
+    if (highlightBtn) {
+      highlightBtn.addEventListener('click', () => {
+        // Scroll to the element and highlight it briefly
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Add temporary highlight
+        const originalStyle = targetElement.style.cssText;
+        targetElement.style.cssText = originalStyle + '; outline: 3px solid #007bff; outline-offset: 2px;';
+
+        setTimeout(() => {
+          targetElement.style.cssText = originalStyle;
+        }, 3000);
+
+        highlightBtn.textContent = 'Highlighted!';
+        setTimeout(() => {
+          highlightBtn.textContent = 'Highlight Element';
+        }, 2000);
+      });
+    }
+
+    // Auto-close after 30 seconds
+    setTimeout(() => {
+      if (panel.parentNode) {
+        panel.remove();
+      }
+    }, 30000);
+
+  } catch (error) {
+    console.error('Error displaying Bedrock analysis:', error);
+  }
 }
 
 // Global function to activate element picker

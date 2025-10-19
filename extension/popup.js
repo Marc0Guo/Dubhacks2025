@@ -35,8 +35,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Handle settings button
   settingsButton.addEventListener('click', function() {
-    // TODO: Open settings page or modal
     console.log('Settings clicked');
+    // Open settings page in a new tab
+    chrome.tabs.create({
+      url: chrome.runtime.getURL('settings.html')
+    });
   });
 
   // Handle help button
