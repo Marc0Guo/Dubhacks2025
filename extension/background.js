@@ -11,43 +11,57 @@ let workflowState = {
   steps: []
 };
 
+// Store for explain mode state
+let explainModeState = {
+  isActive: false,
+  bedrockClient: null
+};
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Background received message:', request);
-  
+
   switch (request.action) {
     case 'startGuidance':
       handleStartGuidance(request.goal, sendResponse);
       return true; // Keep message channel open for async response
-      
+
     case 'getWorkflowState':
       sendResponse(workflowState);
       break;
-      
+
     case 'nextStep':
       handleNextStep(sendResponse);
       return true;
-      
+
     case 'previousStep':
       handlePreviousStep(sendResponse);
       return true;
-      
+
     case 'stopGuidance':
       handleStopGuidance(sendResponse);
       break;
-      
+
     case 'pageChanged':
       handlePageChange(request.url, sendResponse);
       break;
-      
+
     case 'navigateToUrl':
       handleNavigation(request.url, sendResponse);
       return true;
-      
+
     case 'openPopup':
       handleOpenPopup(sendResponse);
       break;
-      
+
+    case 'startExplainMode':
+      handleStartExplainMode(sendResponse);
+      break;
+
+    case 'explainElement':
+      handleExplainElement(request.elementData, sendResponse);
+      return true;
+
     default:
       sendResponse({ success: false, error: 'Unknown action' });
   }
@@ -56,11 +70,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Handle starting guidance
 function handleStartGuidance(goal, sendResponse) {
   console.log('Starting guidance for goal:', goal);
-  
+
   try {
     // Generate workflow steps based on goal
     const workflow = generateWorkflow(goal);
-    
+
     if (workflow && workflow.steps.length > 0) {
       workflowState = {
         isActive: true,
@@ -69,9 +83,9 @@ function handleStartGuidance(goal, sendResponse) {
         goal: goal,
         steps: workflow.steps
       };
-      
+
       currentWorkflow = workflow;
-      
+
       // Send message to content script to start visual guidance
       chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
         if (tabs[0]) {
@@ -82,7 +96,7 @@ function handleStartGuidance(goal, sendResponse) {
           });
         }
       });
-      
+
       sendResponse({ success: true, workflow: workflow });
     } else {
       sendResponse({ success: false, error: 'Could not generate workflow for this goal' });
@@ -96,7 +110,7 @@ function handleStartGuidance(goal, sendResponse) {
 // Generate workflow based on goal (basic keyword matching for MVP)
 function generateWorkflow(goal) {
   const goalLower = goal.toLowerCase();
-  
+
   // Static workflows for MVP
   if (goalLower.includes('static') && goalLower.includes('website')) {
     return {
@@ -138,7 +152,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   if (goalLower.includes('web') && goalLower.includes('app')) {
     return {
       name: 'Deploy Web Application',
@@ -171,7 +185,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   // Detailed EC2 Instance Launch Workflow
   if (goalLower.includes('launch') && goalLower.includes('instance')) {
     return {
@@ -279,7 +293,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   if (goalLower.includes('database')) {
     return {
       name: 'Setup Database',
@@ -304,7 +318,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   if (goalLower.includes('api') || goalLower.includes('serverless')) {
     return {
       name: 'Create Serverless API',
@@ -329,7 +343,7 @@ function generateWorkflow(goal) {
       ]
     };
   }
-  
+
   // Default workflow for unrecognized goals
   return {
     name: 'General AWS Guidance',
@@ -355,25 +369,25 @@ function handleNextStep(sendResponse) {
     totalSteps: workflowState.totalSteps,
     stepsLength: workflowState.steps ? workflowState.steps.length : 'undefined'
   });
-  
+
   // Check if workflow state is properly initialized
   if (!workflowState || !workflowState.steps || workflowState.steps.length === 0) {
     console.error('Workflow state not properly initialized');
     sendResponse({ success: false, error: 'Workflow not initialized' });
     return;
   }
-  
+
   if (workflowState.isActive && workflowState.currentStep < workflowState.totalSteps - 1) {
     workflowState.currentStep++;
     console.log('Advancing to step:', workflowState.currentStep + 1, 'of', workflowState.totalSteps);
-    
+
     // Validate step exists
     if (!workflowState.steps[workflowState.currentStep]) {
       console.error('Step not found at index:', workflowState.currentStep);
       sendResponse({ success: false, error: 'Step not found' });
       return;
     }
-    
+
     // Send updated step to content script
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       if (tabs[0]) {
@@ -394,9 +408,9 @@ function handleNextStep(sendResponse) {
         console.error('No active tab found');
       }
     });
-    
-    sendResponse({ 
-      success: true, 
+
+    sendResponse({
+      success: true,
       step: workflowState.steps[workflowState.currentStep],
       stepNumber: workflowState.currentStep + 1,
       totalSteps: workflowState.totalSteps
@@ -405,7 +419,7 @@ function handleNextStep(sendResponse) {
     // Workflow completed
     console.log('Workflow completed!');
     workflowState.isActive = false;
-    
+
     // Send completion message to content script
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       if (tabs[0]) {
@@ -415,7 +429,7 @@ function handleNextStep(sendResponse) {
         });
       }
     });
-    
+
     sendResponse({ success: true, completed: true, message: 'Workflow completed successfully!' });
   } else {
     console.error('Cannot advance step - workflow not active or invalid state');
@@ -427,7 +441,7 @@ function handleNextStep(sendResponse) {
 function handlePreviousStep(sendResponse) {
   if (workflowState.isActive && workflowState.currentStep > 0) {
     workflowState.currentStep--;
-    
+
     // Send updated step to content script
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       if (tabs[0]) {
@@ -439,7 +453,7 @@ function handlePreviousStep(sendResponse) {
         });
       }
     });
-    
+
     sendResponse({ success: true, step: workflowState.steps[workflowState.currentStep] });
   } else {
     sendResponse({ success: false, error: 'Already at first step' });
@@ -450,7 +464,7 @@ function handlePreviousStep(sendResponse) {
 function handleStopGuidance(sendResponse) {
   workflowState.isActive = false;
   currentWorkflow = null;
-  
+
   // Send message to content script to stop visual guidance
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     if (tabs[0]) {
@@ -459,7 +473,7 @@ function handleStopGuidance(sendResponse) {
       });
     }
   });
-  
+
   sendResponse({ success: true });
 }
 
@@ -480,18 +494,18 @@ function loadWorkflowState() {
 // Handle page change detection
 function handlePageChange(url, sendResponse) {
   console.log('Page changed to:', url);
-  
+
   if (workflowState.isActive && currentWorkflow) {
     const currentStepData = workflowState.steps[workflowState.currentStep];
-    
+
     // Check if the page change matches the expected target page for current step
     if (currentStepData && currentStepData.targetPage && url.includes(currentStepData.targetPage)) {
       console.log('Page change matches expected target, advancing to next step');
-      
+
       // Auto-advance to next step
       if (workflowState.currentStep < workflowState.totalSteps - 1) {
         workflowState.currentStep++;
-        
+
         // Send updated step to content script
         chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
           if (tabs[0]) {
@@ -503,7 +517,7 @@ function handlePageChange(url, sendResponse) {
             });
           }
         });
-        
+
         sendResponse({ success: true, advanced: true, step: workflowState.steps[workflowState.currentStep] });
       } else {
         sendResponse({ success: true, advanced: false, message: 'Workflow completed' });
@@ -519,7 +533,7 @@ function handlePageChange(url, sendResponse) {
 // Handle navigation to specific URL
 function handleNavigation(url, sendResponse) {
   console.log('Navigating to:', url);
-  
+
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     if (tabs[0]) {
       chrome.tabs.update(tabs[0].id, { url: url }, (updatedTab) => {
@@ -545,6 +559,173 @@ function handleOpenPopup(sendResponse) {
   } catch (error) {
     console.error('Error opening popup:', error);
     sendResponse({ success: false, error: error.message });
+  }
+}
+
+// Handle starting explain mode
+function handleStartExplainMode(sendResponse) {
+  console.log('Starting explain mode');
+
+  try {
+    explainModeState.isActive = true;
+
+    // Send message to content script to activate explain mode
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'activateExplainMode'
+        });
+      }
+    });
+
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error('Error starting explain mode:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+// Handle element explanation request
+function handleExplainElement(elementData, sendResponse) {
+  console.log('Handling element explanation request:', elementData);
+
+  try {
+    // For now, we'll use a simple mock response
+    // In a real implementation, this would call the AWS Bedrock API
+    const explanation = generateMockExplanation(elementData);
+
+    // Send explanation back to content script
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'showElementExplanation',
+          explanation: explanation,
+          elementData: elementData
+        });
+      }
+    });
+
+    sendResponse({ success: true, explanation: explanation });
+  } catch (error) {
+    console.error('Error explaining element:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+// Generate mock explanation (placeholder for real Bedrock integration)
+function generateMockExplanation(elementData) {
+  const { element, context, pageUrl } = elementData;
+
+  // Simple heuristic-based explanation
+  const text = element.textContent?.toLowerCase() || '';
+  const tagName = element.tagName?.toLowerCase() || '';
+
+  if (text.includes('launch') && text.includes('instance')) {
+    return `🚀 **Launch Instance Button**
+
+This button starts the process of creating a new EC2 (Elastic Compute Cloud) instance in AWS.
+
+**What it does:**
+• Opens the EC2 instance launch wizard
+• Guides you through configuring your virtual server
+• Creates a new compute instance in the cloud
+
+**How to use it:**
+1. Click this button to begin
+2. Follow the step-by-step configuration
+3. Choose your instance type, AMI, and settings
+4. Review and launch your instance
+
+**Best practices:**
+• Start with free tier eligible options for learning
+• Choose the right instance type for your workload
+• Configure security groups properly
+• Use key pairs for secure access
+
+**Common use cases:**
+• Hosting web applications
+• Running development environments
+• Processing data workloads
+• Learning AWS services`;
+  } else if (text.includes('create') && text.includes('bucket')) {
+    return `🪣 **Create Bucket Button**
+
+This button allows you to create a new S3 (Simple Storage Service) bucket for storing files and data.
+
+**What it does:**
+• Opens the S3 bucket creation wizard
+• Configures storage settings and permissions
+• Creates a globally unique storage container
+
+**How to use it:**
+1. Click to start bucket creation
+2. Enter a unique bucket name
+3. Choose your region and settings
+4. Configure permissions and versioning
+
+**Best practices:**
+• Use descriptive, unique bucket names
+• Enable versioning for important data
+• Configure appropriate access policies
+• Consider lifecycle policies for cost optimization
+
+**Common use cases:**
+• Static website hosting
+• Data backup and archival
+• Application data storage
+• Content delivery and distribution`;
+  } else if (tagName === 'button' || tagName === 'a') {
+    return `🔘 **Interactive Element**
+
+This appears to be an interactive element in the AWS Console.
+
+**What it does:**
+• Performs a specific action when clicked
+• Part of the AWS Console user interface
+• Follows AWS design patterns and conventions
+
+**How to use it:**
+• Click to trigger the associated action
+• Look for tooltips or help text for guidance
+• Follow AWS documentation for best practices
+
+**Best practices:**
+• Always review AWS documentation before making changes
+• Test actions in non-production environments first
+• Follow the principle of least privilege
+• Monitor your AWS resources regularly
+
+**Common use cases:**
+• Navigating between AWS services
+• Creating or modifying resources
+• Managing configurations and settings
+• Accessing help and documentation`;
+  } else {
+    return `📋 **AWS Console Element**
+
+This is an element in the AWS Console interface.
+
+**What it does:**
+• Part of the AWS Console user interface
+• Helps you interact with AWS services
+• Follows AWS design patterns and conventions
+
+**How to use it:**
+• Follow the on-screen instructions
+• Refer to AWS documentation for detailed guidance
+• Use AWS best practices for configuration
+
+**Best practices:**
+• Always review AWS documentation
+• Test changes in non-production environments
+• Follow security best practices
+• Monitor your AWS resources
+
+**Common use cases:**
+• Configuring AWS services
+• Managing resources and settings
+• Navigating the AWS Console
+• Accessing help and support`;
   }
 }
 

@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "identity"
   ],
   "host_permissions": [
     "https://console.aws.amazon.com/*",
@@ -31,7 +32,7 @@
         "https://console.aws.amazon.com/*",
         "https://*.console.aws.amazon.com/*"
       ],
-      "js": ["content.js"],
+      "js": ["aws-bedrock.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_end"
     }
