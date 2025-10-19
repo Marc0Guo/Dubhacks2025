@@ -1417,7 +1417,7 @@ function showExplainModeIndicator() {
 
   indicator.innerHTML = `
     <div style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 16px;">🧠</span>
+      <span style="font-size: 16px;">❓</span>
       <span>Explain Mode Active</span>
       <button id="stop-explain-mode" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer; margin-left: 8px;">×</button>
     </div>
@@ -1478,7 +1478,7 @@ function showExplainLoading(element) {
     animation: pulse 1s infinite;
   `;
 
-  loading.innerHTML = '🧠';
+  loading.innerHTML = '❓';
   document.body.appendChild(loading);
 }
 
@@ -1525,7 +1525,7 @@ function showExplanationResult(element, explanation) {
     const explanationText = typeof explanation === 'string' ? explanation : explanation.what || 'No description available';
     resultPanel.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3 style="margin: 0; color: #4f46e5; font-size: 16px;">🧠 AI Explanation</h3>
+        <h3 style="margin: 0; color: #4f46e5; font-size: 16px;">❓ AI Explanation</h3>
         <button id="close-explain-result" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #666;">×</button>
       </div>
       <div style="color: #374151; line-height: 1.6;">
@@ -1536,7 +1536,7 @@ function showExplanationResult(element, explanation) {
     // Display structured explanation (fallback)
     resultPanel.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3 style="margin: 0; color: #4f46e5; font-size: 16px;">🧠 AI Explanation</h3>
+        <h3 style="margin: 0; color: #4f46e5; font-size: 16px;">❓ AI Explanation</h3>
         <button id="close-explain-result" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #666;">×</button>
       </div>
       <div style="color: #374151;">

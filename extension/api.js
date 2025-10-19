@@ -106,7 +106,7 @@ export async function errorHelp(errorText, service = 'bedrock') {
         error: errorText 
       })
     });
-    console.log('🔧 Error help:', result);
+    console.log('Error help:', result);
     return result;
   } catch (error) {
     console.error('❌ Error help failed:', error);
