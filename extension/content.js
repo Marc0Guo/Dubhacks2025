@@ -28,6 +28,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true });
       break;
       
+    case 'workflowCompleted':
+      showWorkflowCompletion(request.message);
+      sendResponse({ success: true });
+      break;
+      
     default:
       sendResponse({ success: false, error: 'Unknown action' });
   }
@@ -76,9 +81,21 @@ function startVisualGuidance(workflow, step) {
 
 // Update current step
 function updateStep(step, stepNumber, totalSteps) {
-  console.log('Updating to step:', step.title);
+  console.log('updateStep called:', {
+    title: step.title,
+    stepNumber: stepNumber,
+    totalSteps: totalSteps,
+    selector: step.selector
+  });
   
   visualGuidance.currentStep = step;
+  
+  // Clear any existing panels to prevent conflicts
+  const existingPanel = document.getElementById('aws-navigator-general-panel');
+  if (existingPanel) {
+    existingPanel.remove();
+  }
+  
   showStep(step, stepNumber, totalSteps);
 }
 
@@ -160,24 +177,52 @@ function createOverlay() {
 
 // Show current step with visual cues
 function showStep(step, stepNumber = 1, totalSteps = 1) {
+  console.log('showStep called:', {
+    title: step.title,
+    stepNumber: stepNumber,
+    totalSteps: totalSteps,
+    selector: step.selector
+  });
+  
   if (!visualGuidance.overlay) {
     createOverlay();
   }
   
-  // Clear existing cues
+  // Clear existing cues and panels
   if (visualGuidance.cue) {
     visualGuidance.cue.remove();
   }
   
+  const existingPanel = document.getElementById('aws-navigator-general-panel');
+  if (existingPanel) {
+    existingPanel.remove();
+  }
+  
   // Find target element
   const targetElement = findTargetElement(step.selector);
+  console.log('Target element found:', targetElement ? 'YES' : 'NO');
   
   if (targetElement) {
     // Create visual cue
+    console.log('Creating visual cue for found element');
     createVisualCue(targetElement, step, stepNumber, totalSteps);
   } else {
     // Show general guidance if element not found
+    console.log('Element not found, showing general guidance');
     showGeneralGuidance(step, stepNumber, totalSteps);
+    
+    // Auto-advance after 10 seconds if user doesn't interact
+    setTimeout(() => {
+      const panel = document.getElementById('aws-navigator-general-panel');
+      if (panel && panel.parentNode) {
+        console.log('Auto-advancing step after timeout');
+        chrome.runtime.sendMessage({ action: 'nextStep' }, (response) => {
+          if (response && response.success) {
+            console.log('Auto-advance successful');
+          }
+        });
+      }
+    }, 10000);
   }
 }
 
@@ -319,6 +364,52 @@ function findTargetElement(selector) {
     },
     () => {
       try {
+        // Special handling for instance name input field
+        if (selector === '[data-testid="instance-name"]') {
+          console.log('Searching for instance name input...');
+          
+          // Look for input fields that might be for instance name
+          const inputSelectors = [
+            'input[placeholder*="name" i]',
+            'input[placeholder*="instance" i]',
+            'input[aria-label*="name" i]',
+            'input[aria-label*="instance" i]',
+            'input[type="text"]',
+            'input:not([type="hidden"])'
+          ];
+          
+          for (const inputSelector of inputSelectors) {
+            const inputs = Array.from(document.querySelectorAll(inputSelector));
+            const nameInput = inputs.find(input => {
+              const placeholder = input.placeholder ? input.placeholder.toLowerCase() : '';
+              const ariaLabel = input.getAttribute('aria-label') ? input.getAttribute('aria-label').toLowerCase() : '';
+              return placeholder.includes('name') || placeholder.includes('instance') || 
+                     ariaLabel.includes('name') || ariaLabel.includes('instance');
+            });
+            if (nameInput) {
+              console.log('Found instance name input:', nameInput);
+              return nameInput;
+            }
+          }
+          
+          // Fallback: look for any text input in the main form area
+          const mainForm = document.querySelector('form') || document.querySelector('[role="main"]') || document.body;
+          const textInputs = Array.from(mainForm.querySelectorAll('input[type="text"]'));
+          if (textInputs.length > 0) {
+            console.log('Found text input as fallback:', textInputs[0]);
+            return textInputs[0];
+          }
+          
+          return null;
+        }
+        return null;
+      } catch (e) {
+        console.warn('Instance name input search failed:', e);
+        return null;
+      }
+    },
+    () => {
+      try {
         // Special handling for AWS Console Launch instance button with data-analytics
         if (selector === 'a[data-analytics="launch-an-instance-button"]') {
           console.log('🔍 Strategy 9: AWS Console Launch instance button search...');
@@ -433,6 +524,84 @@ function findTargetElement(selector) {
     
     () => {
       try {
+        // Special handling for AMI selection elements
+        if (selector === '[data-testid="ami-quick-start"]' || selector === '[data-testid="free-tier-ami"]') {
+          console.log('Searching for AMI selection...');
+          
+          // Look for elements containing "AMI" or "Amazon Machine Image"
+          const amiElements = Array.from(document.querySelectorAll('*')).filter(el => {
+            const text = el.textContent && el.textContent.trim().toLowerCase();
+            return text.includes('ami') || text.includes('amazon machine image') || 
+                   text.includes('quick start') || text.includes('free tier');
+          });
+          
+          if (amiElements.length > 0) {
+            console.log('Found AMI-related elements:', amiElements.length);
+            return amiElements[0];
+          }
+          
+          return null;
+        }
+        return null;
+      } catch (e) {
+        console.warn('AMI selection search failed:', e);
+        return null;
+      }
+    },
+    () => {
+      try {
+        // Special handling for instance type selection
+        if (selector === '[data-testid="instance-type"]') {
+          console.log('Searching for instance type selection...');
+          
+          // Look for elements containing "instance type" or "t2.micro"
+          const instanceTypeElements = Array.from(document.querySelectorAll('*')).filter(el => {
+            const text = el.textContent && el.textContent.trim().toLowerCase();
+            return text.includes('instance type') || text.includes('t2.micro') || 
+                   text.includes('free tier') || text.includes('select instance');
+          });
+          
+          if (instanceTypeElements.length > 0) {
+            console.log('Found instance type elements:', instanceTypeElements.length);
+            return instanceTypeElements[0];
+          }
+          
+          return null;
+        }
+        return null;
+      } catch (e) {
+        console.warn('Instance type search failed:', e);
+        return null;
+      }
+    },
+    () => {
+      try {
+        // Special handling for key pair selection
+        if (selector === '[data-testid="key-pair"]') {
+          console.log('Searching for key pair selection...');
+          
+          // Look for elements containing "key pair" or "create new key pair"
+          const keyPairElements = Array.from(document.querySelectorAll('*')).filter(el => {
+            const text = el.textContent && el.textContent.trim().toLowerCase();
+            return text.includes('key pair') || text.includes('create new key pair') ||
+                   text.includes('login') || text.includes('ssh');
+          });
+          
+          if (keyPairElements.length > 0) {
+            console.log('Found key pair elements:', keyPairElements.length);
+            return keyPairElements[0];
+          }
+          
+          return null;
+        }
+        return null;
+      } catch (e) {
+        console.warn('Key pair search failed:', e);
+        return null;
+      }
+    },
+    () => {
+      try {
         // Comprehensive element search (like Beautiful Soup's find_all)
         console.log('🔍 Strategy 11: Comprehensive element search...');
         
@@ -504,7 +673,7 @@ function findTargetElement(selector) {
 
 // Debug function to analyze page structure (inspired by web scraping techniques)
 function debugPageStructure(targetSelector) {
-  console.log('🔍 DEBUG: Analyzing page structure...');
+  console.log('🔍 DEBUG: Analyzing page structure for selector:', targetSelector);
   
   // Get all elements with text content
   const elementsWithText = Array.from(document.querySelectorAll('*')).filter(el => 
@@ -516,30 +685,40 @@ function debugPageStructure(targetSelector) {
   // Look for elements that might contain our target
   const potentialMatches = elementsWithText.filter(el => {
     const text = el.textContent.trim().toLowerCase();
-    return text.includes('launch') || text.includes('instance') || text.includes('ec2');
+    const selectorLower = targetSelector.toLowerCase();
+    return text.includes(selectorLower) || 
+           (selectorLower.includes('launch') && text.includes('launch')) ||
+           (selectorLower.includes('instance') && text.includes('instance')) ||
+           (selectorLower.includes('ec2') && text.includes('ec2'));
   });
   
-  console.log('🎯 Potential matches found:');
-  potentialMatches.slice(0, 10).forEach((el, i) => {
-    console.log(`${i + 1}. ${el.tagName} - "${el.textContent.trim()}" - Classes: ${el.className}`);
-  });
+  if (potentialMatches.length > 0) {
+    console.log('🎯 Potential matches found:');
+    potentialMatches.slice(0, 5).forEach((el, i) => {
+      console.log(`${i + 1}. ${el.tagName} - "${el.textContent.trim()}" - Classes: ${el.className}`);
+    });
+  }
   
   // Look for elements with data-analytics attributes
   const analyticsElements = Array.from(document.querySelectorAll('[data-analytics]'));
-  console.log(`📈 Elements with data-analytics: ${analyticsElements.length}`);
-  analyticsElements.slice(0, 5).forEach((el, i) => {
-    console.log(`${i + 1}. ${el.tagName} - data-analytics="${el.getAttribute('data-analytics')}" - Text: "${el.textContent.trim()}"`);
-  });
+  if (analyticsElements.length > 0) {
+    console.log(`📈 Elements with data-analytics: ${analyticsElements.length}`);
+    analyticsElements.slice(0, 3).forEach((el, i) => {
+      console.log(`${i + 1}. ${el.tagName} - data-analytics="${el.getAttribute('data-analytics')}" - Text: "${el.textContent.trim()}"`);
+    });
+  }
   
-  // Look for AWS UI elements
+  // Look for AWS UI elements (only show if relevant)
   const awsElements = Array.from(document.querySelectorAll('[class*="awsui"]'));
-  console.log(`☁️ AWS UI elements: ${awsElements.length}`);
-  awsElements.slice(0, 5).forEach((el, i) => {
-    console.log(`${i + 1}. ${el.tagName} - Classes: ${el.className} - Text: "${el.textContent.trim()}"`);
-  });
+  if (awsElements.length > 0 && potentialMatches.length === 0) {
+    console.log(`☁️ AWS UI elements found: ${awsElements.length} (showing first 3)`);
+    awsElements.slice(0, 3).forEach((el, i) => {
+      console.log(`${i + 1}. ${el.tagName} - Classes: ${el.className} - Text: "${el.textContent.trim()}"`);
+    });
+  }
 }
 
-// Check if element is visible
+// Check if element is visible and suitable for visual cue
 function isElementVisible(element) {
   try {
     if (!element || !element.getBoundingClientRect) {
@@ -547,9 +726,31 @@ function isElementVisible(element) {
     }
     
     const rect = element.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0 && 
-           rect.top >= 0 && rect.left >= 0 &&
-           rect.bottom <= window.innerHeight && rect.right <= window.innerWidth;
+    
+    // Basic visibility check
+    if (rect.width <= 0 || rect.height <= 0) {
+      return false;
+    }
+    
+    // Check if element is too large (likely a container element)
+    if (rect.width > window.innerWidth * 0.8 || rect.height > window.innerHeight * 0.8) {
+      console.log('Element too large, skipping:', element.tagName, rect.width, rect.height);
+      return false;
+    }
+    
+    // Check if element is too small (likely not interactive)
+    if (rect.width < 20 || rect.height < 20) {
+      console.log('Element too small, skipping:', element.tagName, rect.width, rect.height);
+      return false;
+    }
+    
+    // Check if element is outside viewport
+    if (rect.top < 0 || rect.left < 0 || rect.bottom > window.innerHeight || rect.right > window.innerWidth) {
+      console.log('Element outside viewport, skipping:', element.tagName);
+      return false;
+    }
+    
+    return true;
   } catch (e) {
     console.warn('Error checking element visibility:', e);
     return false;
@@ -567,21 +768,43 @@ function createVisualCue(targetElement, step, stepNumber, totalSteps) {
 
     const rect = targetElement.getBoundingClientRect();
     
+    // Validate element size - if too large, show general guidance instead
+    if (rect.width > window.innerWidth * 0.8 || rect.height > window.innerHeight * 0.8) {
+      console.warn('Element too large for visual cue, showing general guidance instead');
+      showGeneralGuidance(step, stepNumber, totalSteps);
+      return;
+    }
+    
+    // Validate element position
+    if (rect.left < 0 || rect.top < 0 || rect.right > window.innerWidth || rect.bottom > window.innerHeight) {
+      console.warn('Element outside viewport, showing general guidance instead');
+      showGeneralGuidance(step, stepNumber, totalSteps);
+      return;
+    }
+    
+    console.log('Creating visual cue for element:', {
+      width: rect.width,
+      height: rect.height,
+      left: rect.left,
+      top: rect.top
+    });
+    
     // Create cue element
     const cue = document.createElement('div');
     cue.id = 'aws-navigator-cue';
     cue.style.cssText = `
-      position: absolute;
-      left: ${rect.left - 20}px;
-      top: ${rect.top - 20}px;
-      width: ${rect.width + 40}px;
-      height: ${rect.height + 40}px;
+      position: fixed;
+      left: ${Math.max(0, rect.left - 20)}px;
+      top: ${Math.max(0, rect.top - 20)}px;
+      width: ${Math.min(rect.width + 40, window.innerWidth - Math.max(0, rect.left - 20))}px;
+      height: ${Math.min(rect.height + 40, window.innerHeight - Math.max(0, rect.top - 20))}px;
       border: 3px solid #ff4444;
       border-radius: 8px;
       background: rgba(255, 68, 68, 0.1);
       pointer-events: none;
       animation: pulse 2s infinite;
       z-index: 1000000;
+      box-sizing: border-box;
     `;
     
     // Add pulse animation
@@ -728,7 +951,19 @@ function createGuidancePanel(step, stepNumber, totalSteps, targetRect) {
 
 // Show general guidance when target element not found
 function showGeneralGuidance(step, stepNumber, totalSteps) {
+  console.log('showGeneralGuidance called:', {
+    title: step.title,
+    stepNumber: stepNumber,
+    totalSteps: totalSteps
+  });
+  
   try {
+    // Remove any existing general guidance panel
+    const existingPanel = document.getElementById('aws-navigator-general-panel');
+    if (existingPanel) {
+      existingPanel.remove();
+    }
+    
     // Check if page has loading errors
     const hasError = document.body.textContent.includes('Unable to load content') || 
                     document.body.textContent.includes('We could not load the content for the page');
@@ -744,15 +979,22 @@ function showGeneralGuidance(step, stepNumber, totalSteps) {
       border-radius: 8px;
       padding: 16px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-      max-width: 300px;
+      max-width: 350px;
       z-index: 1000001;
       font-size: 14px;
       line-height: 1.4;
     `;
     
+    // Determine if this is the last step
+    const isLastStep = stepNumber >= totalSteps;
+    const nextButtonText = isLastStep ? 'Complete' : 'Next';
+    const nextButtonStyle = isLastStep ? 
+      'padding: 6px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;' :
+      'padding: 6px 12px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;';
+    
     const errorMessage = hasError ? 
       '⚠️ AWS Console failed to load content. Please refresh the page and try again.' :
-      '⚠️ Target element not found. Please navigate manually.';
+      '⚠️ Target element not found. Please complete this step manually and click Next to continue.';
     
     panel.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -763,9 +1005,10 @@ function showGeneralGuidance(step, stepNumber, totalSteps) {
       <div style="margin: 0 0 12px 0; color: #666;">${step.description}</div>
       <p style="margin: 0 0 12px 0; color: #ff4444; font-size: 12px;">${errorMessage}</p>
       ${hasError ? '<p style="margin: 0 0 12px 0; color: #666; font-size: 12px;">💡 Try refreshing the page or check your network connection.</p>' : ''}
+      ${!hasError ? '<p style="margin: 0 0 12px 0; color: #666; font-size: 12px;">💡 Look for the element described above and complete the action manually, then click Next to continue.</p>' : ''}
       <div style="display: flex; gap: 8px;">
         <button id="aws-navigator-general-prev" style="padding: 6px 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">Previous</button>
-        <button id="aws-navigator-general-next" style="padding: 6px 12px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Next</button>
+        <button id="aws-navigator-general-next" style="${nextButtonStyle}">${nextButtonText}</button>
         <button id="aws-navigator-general-stop" style="padding: 6px 12px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Stop</button>
       </div>
     `;
@@ -826,10 +1069,50 @@ function showGeneralGuidance(step, stepNumber, totalSteps) {
       nextBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        console.log('Next button clicked in general guidance panel');
+        
+        // Disable button temporarily to prevent double-clicks
+        nextBtn.disabled = true;
+        nextBtn.textContent = 'Loading...';
+        
         try {
-          chrome.runtime.sendMessage({ action: 'nextStep' });
+          chrome.runtime.sendMessage({ action: 'nextStep' }, (response) => {
+            console.log('Next step response:', response);
+            if (chrome.runtime.lastError) {
+              console.error('Error in next step:', chrome.runtime.lastError);
+              // Re-enable button on error
+              nextBtn.disabled = false;
+              nextBtn.textContent = isLastStep ? 'Complete' : 'Next';
+            } else if (response && response.success) {
+              console.log('Step advanced successfully to step:', response.stepNumber);
+              // Don't re-enable button - let the new step take over
+            } else if (!response || !response.success) {
+              console.error('Next step failed:', response);
+              // Re-enable button on failure
+              nextBtn.disabled = false;
+              nextBtn.textContent = isLastStep ? 'Complete' : 'Next';
+            } else {
+              console.warn('Unexpected response format:', response);
+              // Re-enable button on unexpected response
+              nextBtn.disabled = false;
+              nextBtn.textContent = isLastStep ? 'Complete' : 'Next';
+            }
+          });
+          
+          // Timeout fallback - re-enable button after 3 seconds
+          setTimeout(() => {
+            if (nextBtn.disabled) {
+              console.warn('Next step timeout - re-enabling button');
+              nextBtn.disabled = false;
+              nextBtn.textContent = isLastStep ? 'Complete' : 'Next';
+            }
+          }, 3000);
+          
         } catch (error) {
           console.error('Error sending next step message:', error);
+          // Re-enable button on error
+          nextBtn.disabled = false;
+          nextBtn.textContent = isLastStep ? 'Complete' : 'Next';
         }
       });
     }
@@ -845,6 +1128,76 @@ function showGeneralGuidance(step, stepNumber, totalSteps) {
     console.error('Error creating general guidance panel:', e);
     // Fallback: just stop the guidance
     stopVisualGuidance();
+  }
+}
+
+// Show workflow completion message
+function showWorkflowCompletion(message) {
+  try {
+    // Remove any existing panels
+    stopVisualGuidance();
+    
+    const panel = document.createElement('div');
+    panel.id = 'aws-navigator-completion-panel';
+    panel.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 3px solid #28a745;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      max-width: 400px;
+      z-index: 1000002;
+      font-size: 16px;
+      line-height: 1.5;
+      text-align: center;
+    `;
+    
+    panel.innerHTML = `
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 48px; color: #28a745; margin-bottom: 16px;">🎉</div>
+        <h2 style="margin: 0 0 12px 0; color: #28a745; font-size: 24px;">Workflow Complete!</h2>
+        <p style="margin: 0 0 20px 0; color: #666;">${message}</p>
+        <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">You have successfully completed all the steps in your AWS workflow.</p>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button id="aws-navigator-completion-close" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">Close</button>
+        <button id="aws-navigator-completion-restart" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">Start New Workflow</button>
+      </div>
+    `;
+    
+    document.body.appendChild(panel);
+    
+    // Add event listeners
+    const closeBtn = document.getElementById('aws-navigator-completion-close');
+    const restartBtn = document.getElementById('aws-navigator-completion-restart');
+    
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        panel.remove();
+      });
+    }
+    
+    if (restartBtn) {
+      restartBtn.addEventListener('click', () => {
+        panel.remove();
+        // Open the extension popup to start a new workflow
+        chrome.runtime.sendMessage({ action: 'openPopup' });
+      });
+    }
+    
+    // Auto-close after 10 seconds
+    setTimeout(() => {
+      if (panel.parentNode) {
+        panel.remove();
+      }
+    }, 10000);
+    
+  } catch (e) {
+    console.error('Error showing workflow completion:', e);
   }
 }
 

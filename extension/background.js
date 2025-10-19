@@ -44,6 +44,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       handleNavigation(request.url, sendResponse);
       return true;
       
+    case 'openPopup':
+      handleOpenPopup(sendResponse);
+      break;
+      
     default:
       sendResponse({ success: false, error: 'Unknown action' });
   }
@@ -345,24 +349,77 @@ function generateWorkflow(goal) {
 
 // Handle next step
 function handleNextStep(sendResponse) {
+  console.log('handleNextStep called - workflowState:', {
+    isActive: workflowState.isActive,
+    currentStep: workflowState.currentStep,
+    totalSteps: workflowState.totalSteps,
+    stepsLength: workflowState.steps ? workflowState.steps.length : 'undefined'
+  });
+  
+  // Check if workflow state is properly initialized
+  if (!workflowState || !workflowState.steps || workflowState.steps.length === 0) {
+    console.error('Workflow state not properly initialized');
+    sendResponse({ success: false, error: 'Workflow not initialized' });
+    return;
+  }
+  
   if (workflowState.isActive && workflowState.currentStep < workflowState.totalSteps - 1) {
     workflowState.currentStep++;
+    console.log('Advancing to step:', workflowState.currentStep + 1, 'of', workflowState.totalSteps);
+    
+    // Validate step exists
+    if (!workflowState.steps[workflowState.currentStep]) {
+      console.error('Step not found at index:', workflowState.currentStep);
+      sendResponse({ success: false, error: 'Step not found' });
+      return;
+    }
     
     // Send updated step to content script
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       if (tabs[0]) {
+        console.log('Sending updateStep message to content script');
         chrome.tabs.sendMessage(tabs[0].id, {
           action: 'updateStep',
           step: workflowState.steps[workflowState.currentStep],
           stepNumber: workflowState.currentStep + 1,
           totalSteps: workflowState.totalSteps
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('Error sending updateStep to content script:', chrome.runtime.lastError);
+          } else {
+            console.log('updateStep sent successfully:', response);
+          }
+        });
+      } else {
+        console.error('No active tab found');
+      }
+    });
+    
+    sendResponse({ 
+      success: true, 
+      step: workflowState.steps[workflowState.currentStep],
+      stepNumber: workflowState.currentStep + 1,
+      totalSteps: workflowState.totalSteps
+    });
+  } else if (workflowState.isActive && workflowState.currentStep >= workflowState.totalSteps - 1) {
+    // Workflow completed
+    console.log('Workflow completed!');
+    workflowState.isActive = false;
+    
+    // Send completion message to content script
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'workflowCompleted',
+          message: 'Congratulations! You have completed the workflow.'
         });
       }
     });
     
-    sendResponse({ success: true, step: workflowState.steps[workflowState.currentStep] });
+    sendResponse({ success: true, completed: true, message: 'Workflow completed successfully!' });
   } else {
-    sendResponse({ success: false, error: 'No more steps available' });
+    console.error('Cannot advance step - workflow not active or invalid state');
+    sendResponse({ success: false, error: 'No active workflow or invalid state' });
   }
 }
 
@@ -478,6 +535,17 @@ function handleNavigation(url, sendResponse) {
       sendResponse({ success: false, error: 'No active tab found' });
     }
   });
+}
+
+// Handle opening popup
+function handleOpenPopup(sendResponse) {
+  try {
+    chrome.action.openPopup();
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error('Error opening popup:', error);
+    sendResponse({ success: false, error: error.message });
+  }
 }
 
 // Initialize
