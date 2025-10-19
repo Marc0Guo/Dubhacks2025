@@ -6,6 +6,18 @@ document.addEventListener('DOMContentLoaded', function() {
   const statusSection = document.getElementById('status-section');
   const settingsButton = document.getElementById('settings-btn');
   const helpButton = document.getElementById('help-btn');
+  const modeButtons = document.querySelectorAll('.mode-btn');
+  const modeContents = document.querySelectorAll('.mode-content');
+  
+  // Explain mode elements
+  const explainInput = document.getElementById('explain-input');
+  const startExplainButton = document.getElementById('start-explain');
+  const explainStatusSection = document.getElementById('explain-status-section');
+  
+  // Error mode elements
+  const errorInput = document.getElementById('error-input');
+  const startErrorButton = document.getElementById('start-error');
+  const errorStatusSection = document.getElementById('error-status-section');
 
   // Enable/disable start button based on input
   goalInput.addEventListener('input', function() {
@@ -13,11 +25,39 @@ document.addEventListener('DOMContentLoaded', function() {
     startButton.disabled = !hasText;
   });
 
+  // Enable/disable explain button based on input
+  explainInput.addEventListener('input', function() {
+    const hasText = this.value.trim().length > 0;
+    startExplainButton.disabled = !hasText;
+  });
+
+  // Enable/disable error button based on input
+  errorInput.addEventListener('input', function() {
+    const hasText = this.value.trim().length > 0;
+    startErrorButton.disabled = !hasText;
+  });
+
   // Handle start guide button click
   startButton.addEventListener('click', function() {
     const goal = goalInput.value.trim();
     if (goal) {
       startGuidance(goal);
+    }
+  });
+
+  // Handle explain button click
+  startExplainButton.addEventListener('click', function() {
+    const question = explainInput.value.trim();
+    if (question) {
+      startExplanation(question);
+    }
+  });
+
+  // Handle error button click
+  startErrorButton.addEventListener('click', function() {
+    const error = errorInput.value.trim();
+    if (error) {
+      startErrorDiagnosis(error);
     }
   });
 
@@ -44,6 +84,30 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Help clicked');
   });
 
+  // Handle mode switching
+  modeButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const mode = this.dataset.mode;
+      switchMode(mode);
+    });
+  });
+
+  // Function to switch between modes
+  function switchMode(mode) {
+    // Remove active class from all buttons and content
+    modeButtons.forEach(btn => btn.classList.remove('active'));
+    modeContents.forEach(content => content.classList.remove('active'));
+    
+    // Add active class to selected button and content
+    const activeButton = document.querySelector(`[data-mode="${mode}"]`);
+    const activeContent = document.getElementById(`${mode}-mode`);
+    
+    if (activeButton && activeContent) {
+      activeButton.classList.add('active');
+      activeContent.classList.add('active');
+    }
+  }
+
   // Function to start guidance process
   function startGuidance(goal) {
     console.log('Starting guidance for:', goal);
@@ -66,6 +130,58 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1500);
       } else {
         statusSection.querySelector('.status-text').textContent = 'Error starting guidance. Please try again.';
+      }
+    });
+  }
+
+  // Function to start explanation process
+  function startExplanation(question) {
+    console.log('Starting explanation for:', question);
+    
+    // Show status
+    explainStatusSection.style.display = 'block';
+    explainStatusSection.querySelector('.status-text').textContent = 'Analyzing your question...';
+    
+    // Send message to background script
+    chrome.runtime.sendMessage({
+      action: 'startExplanation',
+      question: question
+    }, function(response) {
+      if (response && response.success) {
+        explainStatusSection.querySelector('.status-text').textContent = 'Explanation started! Check the AWS Console.';
+        
+        // Close popup after a short delay
+        setTimeout(() => {
+          window.close();
+        }, 1500);
+      } else {
+        explainStatusSection.querySelector('.status-text').textContent = 'Error starting explanation. Please try again.';
+      }
+    });
+  }
+
+  // Function to start error diagnosis process
+  function startErrorDiagnosis(error) {
+    console.log('Starting error diagnosis for:', error);
+    
+    // Show status
+    errorStatusSection.style.display = 'block';
+    errorStatusSection.querySelector('.status-text').textContent = 'Analyzing your error...';
+    
+    // Send message to background script
+    chrome.runtime.sendMessage({
+      action: 'startErrorDiagnosis',
+      error: error
+    }, function(response) {
+      if (response && response.success) {
+        errorStatusSection.querySelector('.status-text').textContent = 'Diagnosis started! Check the AWS Console.';
+        
+        // Close popup after a short delay
+        setTimeout(() => {
+          window.close();
+        }, 1500);
+      } else {
+        errorStatusSection.querySelector('.status-text').textContent = 'Error starting diagnosis. Please try again.';
       }
     });
   }
